@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed8eb54a1a78a01409a7fa9272529741, type: 3}
+  m_Name: MessageablePrepareCommander
+  m_EditorClassIdentifier: 
+  injectList:
+  - {fileID: 11400000, guid: 78817191f77cfc04f830c304c4c5ef59, type: 2}
+  - {fileID: 11400000, guid: 7a44f247305e03944baedb1fe3c36933, type: 2}
+  - {fileID: 11400000, guid: d561d98ea23de2e49958245ef28968b4, type: 2}
+  - {fileID: 11400000, guid: 26190265577e73544b2cc6a4d84d40c9, type: 2}
+  - {fileID: 11400000, guid: 0b16ff281902b6d43b7913f5114d0a71, type: 2}
+  - {fileID: 11400000, guid: e85987a6e6930f44c8dc71cd13c63759, type: 2}
+  - {fileID: 11400000, guid: 69f72a8d065b4d744ac128f1be9c339b, type: 2}
+  - {fileID: 11400000, guid: d3106c18b69aca94f97bbcae75612292, type: 2}
+  - {fileID: 11400000, guid: ea34358585ecb3347b0e50bdcafcba75, type: 2}
+  - {fileID: 11400000, guid: 89bcd990305c4b5408c59839ea9b67c5, type: 2}
+  - {fileID: 11400000, guid: cb73967aa3c143e4ab80e4033991d542, type: 2}
+  - {fileID: 11400000, guid: 9a07e2dbfc177094f9d079008db848a5, type: 2}
+  - {fileID: 11400000, guid: 0291e4910fb12f049bff4af0cb1d3e69, type: 2}

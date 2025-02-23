@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7aec0b9fe44787f4aafa57b6b4b1e75a, type: 3}
+  m_Name: '@FormationCharaInjecter'
+  m_EditorClassIdentifier: 
+  messageableSOList:
+  - {fileID: 11400000, guid: 5df9943305f74624eb06d5982a3e5f39, type: 2}
+  - {fileID: 11400000, guid: 696f04cbd6986c24e95e4eebb1f65ae5, type: 2}
+  - {fileID: 11400000, guid: e66e4fe542d5e5a45935fbbc89b08ad6, type: 2}
+  - {fileID: 11400000, guid: 150d64886369ed545868e092c999ee17, type: 2}

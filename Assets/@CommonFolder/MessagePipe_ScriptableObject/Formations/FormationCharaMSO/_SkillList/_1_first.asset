@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9a2f2d9adce0414c9fb8faebeb62167, type: 3}
+  m_Name: _1_first
+  m_EditorClassIdentifier: 
+  aSkillCatalog:
+  - {fileID: 11400000, guid: 9e9c7c2afd72e6d46b95b24a4921d292, type: 2}
+  - {fileID: 11400000, guid: 6907d2399bdff9a4cb460c468c542033, type: 2}
+  mFrontSkillCatalog:
+  - {fileID: 11400000, guid: b77378526016148449ae5ac5000d9bbb, type: 2}
+  - {fileID: 11400000, guid: 8a38f69b4ca8bd04ebbfe5a755974cd4, type: 2}
+  mBackSkillCatalog:
+  - {fileID: 11400000, guid: 8f54f127ce74a124bb847727b867c520, type: 2}
+  - {fileID: 11400000, guid: daf388809d075564f96280c96a58fc79, type: 2}

@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba66c6885f92ded45bde11381b284b3e, type: 3}
+  m_Name: _4_forth
+  m_EditorClassIdentifier: 
+  formNumSO: {fileID: 11400000, guid: 4bfb91c2ec5933e40bd6cb4699c0eec1, type: 2}
+  setChara: {fileID: 11400000, guid: acd8a841cb8c9c246b8af8b0a2e6871a, type: 2}
+  skillListHolderSO: {fileID: 11400000, guid: e9061fe8af0da96478cd908cf8dff9df, type: 2}
