@@ -14,4 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   skillName: "\u5F8C\u9000"
   description: "\u5F8C\u885B\u306B\u4E0B\u304C\u308B"
+  registed: 0
   skillEffectSO: {fileID: 11400000, guid: 4bd8ea15b353c0e4389ab3dd757e4034, type: 2}
+  skillTarget: {fileID: 11400000, guid: 732512a6400290746a413c021656ab4b, type: 2}

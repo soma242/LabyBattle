@@ -14,17 +14,18 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 
 #pragma warning disable CS4014 // disable warning
+#pragma warning disable CS1998 // disable warning
 
 using BattleSceneMessage;
 using SkillStruct;
 
-public class ActionOptionController : MonoBehaviour
+using UnityEngine.EventSystems;
+
+public class ActionOptionController : BaseSelectMessageHolder, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
     private int listNum;
 
-    //Layer
-    [SerializeField] 
-    private InputLayerSO inputLayerSO;
+
 
     [SerializeField]
     private TMP_Text text;
@@ -47,6 +48,12 @@ public class ActionOptionController : MonoBehaviour
 
     //MessagePipe
 
+    private CancellationTokenSource cts;
+    private IPublisher<DescriptionDemendMessage> descDemendPub;
+    private IPublisher<DescriptionFinishMessage> descFinishPub;
+
+    private IPublisher<ASkillSimulateMessage> simulatePub;
+
     //select変更用MessagePipe
     //BuiltInContainer
     private IPublisher<SelectMessage, SelectChange> selectPublisher;
@@ -57,15 +64,14 @@ public class ActionOptionController : MonoBehaviour
 
     private System.IDisposable disposableOnDestroy;
 
+    private IAsyncSubscriber<ActionSelectBookMessage> bookASub;
+    private IPublisher<BookCommonActiveKeyMessage> bookKeyPub;
+
 
 
     //Input受け入れ用MessagePipe
-    [Inject] private readonly ISubscriber<InputLayerSO, UpInput> upSubscriber;
-    [Inject] private readonly ISubscriber<InputLayerSO, DownInput> downSubscriber;
-    [Inject] private readonly ISubscriber<InputLayerSO, RightInput> rightSubscriber;
-    [Inject] private readonly ISubscriber<InputLayerSO, LeftInput> leftSubscriber;
 
-    private System.IDisposable disposableInput;
+
 
     //関数
      void Awake()
@@ -75,10 +81,19 @@ public class ActionOptionController : MonoBehaviour
         listNum = 0;
 
         //BuiltInContainer
+
+        descDemendPub = GlobalMessagePipe.GetPublisher<DescriptionDemendMessage>();
+        descFinishPub = GlobalMessagePipe.GetPublisher<DescriptionFinishMessage>();
+
+        simulatePub = GlobalMessagePipe.GetPublisher<ASkillSimulateMessage>();
+
         selectPublisher = GlobalMessagePipe.GetPublisher<SelectMessage, SelectChange>();
         selectSubscriber = GlobalMessagePipe.GetSubscriber<SelectMessage, SelectChange>();
 
         skillListSub = GlobalMessagePipe.GetSubscriber<SelectSkillListChangeMessage>();
+
+        bookASub = GlobalMessagePipe.GetAsyncSubscriber<ActionSelectBookMessage>();
+        bookKeyPub = GlobalMessagePipe.GetPublisher<BookCommonActiveKeyMessage>();
 
         var bag = DisposableBag.CreateBuilder();
 
@@ -89,10 +104,18 @@ public class ActionOptionController : MonoBehaviour
 
         skillListSub.Subscribe(get =>
         {
+
             listNum = 0;
             skillListHolderSO = get.skillListHolderSO;
             text.SetText(skillListHolderSO.aSkillCatalog[listNum].GetSkillName());
-            skillListHolderSO.aSkillCatalog[listNum].skillEffectSO.skillTarget.SetTargetSort();
+            simulatePub.Publish(new ASkillSimulateMessage(skillListHolderSO.aSkillCatalog[listNum].GetSkillName()));
+            skillListHolderSO.aSkillCatalog[listNum].skillTarget.SetTargetSort();
+        }).AddTo(bag);
+
+        bookASub.Subscribe(async (get,ct) =>
+        {
+            bookKeyPub.Publish(new BookCommonActiveKeyMessage(skillListHolderSO.aSkillCatalog[listNum].GetSkillKey()));
+            skillListHolderSO.aSkillCatalog[listNum].AcriveSkillBootBook();
         }).AddTo(bag);
 
         disposableOnDestroy = bag.Build();
@@ -106,12 +129,17 @@ public class ActionOptionController : MonoBehaviour
     private async UniTask SelectThisComponent()
     {
 
+        selectDispPub.Publish(inputLayerSO, new DisposeSelect());
+
+        //現在走っているPublishを受け入れないために1frame待つ
+        await UniTask.NextFrame();
+
         image.sprite = sourceImageSO.onSelect;
 
         var bag = DisposableBag.CreateBuilder();
 
-        //現在走っているPublishを受け入れないために1frame待つ
-        await UniTask.NextFrame();
+
+
 
 
         upSubscriber.Subscribe(inputLayerSO, i => {
@@ -121,20 +149,86 @@ public class ActionOptionController : MonoBehaviour
         downSubscriber.Subscribe(inputLayerSO, i => {
             NextDownSelect();
         }).AddTo(bag);
+        enterSub.Subscribe(inputLayerSO, i => {
+            NextDownSelect();
+        }).AddTo(bag);
+
+        selectDispSub.Subscribe(inputLayerSO, get =>
+        {
+            UnselectThisComponent();
+        }).AddTo(bag);
 
         rightSubscriber.Subscribe(inputLayerSO, i => {
             AddListNum();
             text.SetText(skillListHolderSO.aSkillCatalog[listNum].GetSkillName());
+            //text.SetText($"aiueo{FormationScope.FrontCharaText()}");
+            //対応するスキル名をPub
+            simulatePub.Publish(new ASkillSimulateMessage(skillListHolderSO.aSkillCatalog[listNum].GetSkillName()));
+
+            skillListHolderSO.aSkillCatalog[listNum].skillTarget.SetTargetSort();
+
         }).AddTo(bag);
 
         leftSubscriber.Subscribe(inputLayerSO, i =>
         {
             DeductListNum();
             text.SetText(skillListHolderSO.aSkillCatalog[listNum].GetSkillName());
+            simulatePub.Publish(new ASkillSimulateMessage(skillListHolderSO.aSkillCatalog[listNum].GetSkillName()));
+
+            skillListHolderSO.aSkillCatalog[listNum].skillTarget.SetTargetSort();
+
         }).AddTo(bag);
 
 
         disposableInput = bag.Build();
+    }
+
+    public async void OnPointerEnter(PointerEventData pointerEventData)
+    {
+        cts?.Cancel();
+        cts = new CancellationTokenSource();
+        try
+        {
+            await WaitForSecond(cts);
+            descDemendPub.Publish(new DescriptionDemendMessage(skillListHolderSO.aSkillCatalog[listNum].GetDescription()));
+        }
+        catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token)
+        {
+#if UNITY_EDITOR
+                    if (cts.IsCancellationRequested)
+                    {
+                        // 引数のCancellationTokenが原因なので、それを保持したOperationCanceledExceptionとして投げる
+                        //throw new OperationCanceledException(ex.Message, ex, cts.Token);
+                    }
+                    else
+                    {
+                        // タイムアウトが原因なので、TimeoutException(或いは独自の例外)として投げる
+                        throw new TimeoutException("The request was canceled due to the configured Timeout ");
+                    }
+#endif
+
+
+        }
+
+    }
+
+    public void OnPointerExit(PointerEventData pointerEventData)
+    {
+        cts?.Cancel();
+        descFinishPub.Publish(new DescriptionFinishMessage());
+    }
+
+
+    public async void OnPointerClick(PointerEventData pointerEventData)
+    {
+        SelectThisComponent();
+    }
+
+
+    private async UniTask WaitForSecond(CancellationTokenSource cts)
+    {
+        await UniTask.Delay(TimeSpan.FromSeconds(1.5f), cancellationToken: cts.Token);
+
     }
 
     private void AddListNum()
@@ -169,7 +263,7 @@ public class ActionOptionController : MonoBehaviour
 
     private void UnselectThisComponent()
     {
-        disposableInput.Dispose();
+        disposableInput?.Dispose();
         image.sprite = sourceImageSO.offSelect;
     }
 

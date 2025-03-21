@@ -65,11 +65,22 @@ public class MSO_CharacterDataSO : MessageableScriptableObject
     // Status
     //setter‚Å‚ÍSerializeField‚ÆŠ±Â‚·‚é
     [SerializeField]
+    private string charaName;
+    [SerializeField]
     private int maxHP;
     [SerializeField]
     private int attack; 
     [SerializeField]
+    private int magic; 
+    [SerializeField]
+    private int defence; 
+    [SerializeField]
+    private int mDefence; 
+    [SerializeField]
     private int agility;
+
+    [SerializeField]
+    private int targetRate = 50;
 
 
     public override void MessageStart()
@@ -93,7 +104,7 @@ public class MSO_CharacterDataSO : MessageableScriptableObject
     }
 
     //formation‚©‚ç”­“®‚µCskillTreeCatalog(class‚ÌƒŠƒXƒg)‚É“o˜^‚³‚ê‚Ä‚¢‚éskillTreeSO‚Ì“à•”‚ÉŠi”[‚³‚ê‚Ä‚¢‚é
-    public async UniTask RegistMasterySkill(sbyte formNum)
+    public virtual async UniTask RegistMasterySkill(sbyte formNum)
     {
         await registCommonAPub.PublishAsync(new RegistCommonSkill(formNum));
         foreach(SkillTreeList skillTree in skillTreeCatalog)
@@ -102,6 +113,11 @@ public class MSO_CharacterDataSO : MessageableScriptableObject
         }
         registFinishPub.Publish(new RegistSkillFinish());
 
+    }
+
+    public virtual string GetCharaName()
+    {
+        return charaName;
     }
 
     public virtual int GetMaxHP()
@@ -113,10 +129,27 @@ public class MSO_CharacterDataSO : MessageableScriptableObject
     {
         return attack;
     }
+    public virtual int GetDefence()
+    {
+        return defence;
+    }
+    public virtual int GetMagic()
+    {
+        return magic;
+    }
+    public virtual int GetMagicDefence()
+    {
+        return mDefence;
+    }
 
     public virtual int GetAgility()
     {
         return agility;
+    }
+
+    public virtual int GetTargetRate()
+    {
+        return targetRate;
     }
 
 

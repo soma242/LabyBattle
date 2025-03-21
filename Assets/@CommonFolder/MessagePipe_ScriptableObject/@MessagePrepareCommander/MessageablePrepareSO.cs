@@ -83,25 +83,46 @@ public class MessageablePrepareSO : ScriptableObject
 
         //To_skillSoldier
         builder.AddMessageBroker<NormalAttack>();
+        builder.AddMessageBroker<NormalMagic>();
+        
+        //moveSkillの実行
+        builder.AddMessageBroker<sbyte, NormalMoveToFront>();
+        builder.AddMessageBroker<sbyte, NormalMoveToBack>();
+        builder.AddMessageBroker<sbyte, TauntApproachMessage>();
+
 
         //To_DamageCalc
         builder.AddMessageBroker<sbyte, NormalDamageCalcMessage>();
 
         //To_MoveSKillCommander
         builder.AddMessageBroker<MoveSkillCommand>();
-        builder.AddMessageBroker<TargetingMoveSkillCommand>();
 
-        //To_CharaActionSimulator
-        builder.AddMessageBroker<sbyte, ChangeActionMessage>();
 
         //スキル登録， To_Formation
         builder.AddMessageBroker<RegistCommonSkill>();
+        builder.AddMessageBroker<RegistCommonPhysicalSkill>();
+        builder.AddMessageBroker<RegistCommonMagicSkill>();
 
         builder.AddMessageBroker<sbyte, RegistSkillStart>();
         builder.AddMessageBroker<RegistSkillFinish>();
 
 
+        builder.AddMessageBroker<sbyte, UnregistPassiveSkill>();
+        builder.AddMessageBroker<PassiveOnBattleStartMessage>();
+
+
+
+        builder.AddMessageBroker<sbyte, BreakePostureMessage>();
+
+
+
+
+        //From_Formation, To_BreakePostureOnTaunt
+        builder.AddMessageBroker<sbyte, TauntSuccessMessage>();
+
+
         builder.AddMessageBroker<SelectSkillListChangeMessage>();
+        builder.AddMessageBroker<SelectCharaNameMessage>();
 
         //SkillTargetSort, From_SkillSO, To_TargetOption
         //chara
@@ -110,22 +131,88 @@ public class MessageablePrepareSO : ScriptableObject
         builder.AddMessageBroker<Active_FrontCharaTarget>();
         builder.AddMessageBroker<Active_BackCharaTarget>();
 
+        builder.AddMessageBroker<Move_NoneTarget>();
+        builder.AddMessageBroker<Move_SingleEnemyTarget>();
+
         //enemy
         builder.AddMessageBroker<Active_SingleEnemyTarget>();
         builder.AddMessageBroker<Active_AllEnemyTarget>();
 
+        //enemyのターゲットの種類
+        builder.AddMessageBroker<EnemyTargetingAllFrontChara>();
+        builder.AddMessageBroker<EnemyTargetingSingleChara>();
+
+        //そのsimulate
+        builder.AddMessageBroker<EnemyTargetFrontSimulate>();
+        builder.AddMessageBroker<EnemyTargetSingleCharaSimulate>();
 
 
-    builder.AddMessageBroker<sbyte, RegistActiveSkill>();
+
+
+         builder.AddMessageBroker<sbyte, RegistActiveSkill>();
         builder.AddMessageBroker<sbyte, RegistMoveSkillOnFront>();
         builder.AddMessageBroker<sbyte, RegistMoveSkillOnBack>();
 
-        
+
+        //builder.AddMessageBroker<ChangeBattleImage>();
+        builder.AddMessageBroker<MovePositionChangeMessage>();
+        builder.AddMessageBroker<sbyte, SetEnemyImage>();
+
+        builder.AddMessageBroker<sbyte, GetNextTargetName>();
+        builder.AddMessageBroker<sbyte, GetPreTargetName>();
+
+        //builder.AddMessageBroker<GetTauntUserName>();
+
+        builder.AddMessageBroker<ReturnTargetName>();
+
+        //ターゲット基準値をそれぞれのキャラから取得する
+        builder.AddMessageBroker<EnemyTargetGetMessage>();
+        builder.AddMessageBroker<EnemyTargetReturn>();
+
+        builder.AddMessageBroker<ReturnAgilityMessage>();
+        builder.AddMessageBroker<GetCommonActionAgility>();
+       
+
+
+        //Simulator
+        builder.AddMessageBroker<ASkillSimulateMessage>();
+
+        builder.AddMessageBroker<MoveSimulateMessage>();
+
+        builder.AddMessageBroker<MoveToBackSimulate>();
+        builder.AddMessageBroker<MoveToFrontSimulate>();
+        builder.AddMessageBroker<MoveWaitSimulate>();
+
+        builder.AddMessageBroker<TauntSimulateCancell>();
+
+        builder.AddMessageBroker<sbyte, TauntApproachSimulate>();
+
+        //BookSkill
+        builder.AddMessageBroker<BookCommonMoveKeyMessage>();
+        builder.AddMessageBroker<BookCommonMoveTargetMessage>();
+        builder.AddMessageBroker<BookCommonActiveKeyMessage>();
+        builder.AddMessageBroker<BookCommonActiveTargetMessage>();
+
+
+        builder.AddMessageBroker<CommonActiveSkillTiming>();
+
+
+
+        //BootSkill
+        //From_BattleSkillCommander, To_Formation
+        builder.AddMessageBroker<sbyte, ActiveSkillBootMessage>();
+        builder.AddMessageBroker<sbyte, MoveSkillBootMessage>();
+
+
+        builder.AddMessageBroker<DescriptionDemendMessage>();
+        builder.AddMessageBroker<DescriptionFinishMessage>();
+
 
         //BattleScene
         //To_BattleSceneCommand
         builder.AddMessageBroker<BattleSceneMessage.BattleStartMessage>();
-
+        //From_BattleSceneCommand, To_Formation(Char,Enemy)
+        builder.AddMessageBroker<BattleSceneMessage.FormationPrepareMessage>();
         //From_BattleSceneCommand, To_effect,  To_CharaNameSimulator, To_EnemySimulator,
         builder.AddMessageBroker<BattleSceneMessage.BattlePrepareMessage>();
         //From_BattleSceneCommand, To_MSO_FormationCharaSO
@@ -133,7 +220,17 @@ public class MessageablePrepareSO : ScriptableObject
 
         builder.AddMessageBroker<BattleSceneMessage.TurnStartMessage>();
 
+        builder.AddMessageBroker<BattleSceneMessage.EnemyActionSetMessage>();
+
+        //From_BattleSceneCommand, FormationChara,
+        //To_FormationChara, ActionSelectSimulator
         builder.AddMessageBroker<sbyte, BattleSceneMessage.ActionSelectStartMessage>();
+        builder.AddMessageBroker<BattleSceneMessage.ActionSelectCancelMessage>();
+
+        //選択したスキルとターゲットを予約終了
+        //From_SelectFinishController, To_FormationChara
+        builder.AddMessageBroker<BattleSceneMessage.ActionSelectBookMessage>();
+        builder.AddMessageBroker<BattleSceneMessage.BookCompleteMessage>();
         builder.AddMessageBroker<BattleSceneMessage.ActionSelectEndMessage>();
 
         builder.AddMessageBroker<BattleSceneMessage.TurnEndMessage>();
@@ -143,12 +240,16 @@ public class MessageablePrepareSO : ScriptableObject
 
         builder.AddMessageBroker<BattleSceneMessage.InputLayer>();
 
-        builder.AddMessageBroker<BattleSceneMessage.InputLayerChanged>();
-        builder.AddMessageBroker<BattleSceneMessage.InputLayer, BattleSceneMessage.InputLayerChanged>();
+        //builder.AddMessageBroker<BattleSceneMessage.InputLayerChanged>();
+        builder.AddMessageBroker<InputLayerSO, BattleSceneMessage.InputLayerChanged>();
 
         builder.AddMessageBroker<BattleSceneMessage.SelectChange>();
         builder.AddMessageBroker<BattleSceneMessage.SelectMessage, BattleSceneMessage.SelectChange>();
         builder.AddMessageBroker<BattleSceneMessage.InputLayerChanged>();
+
+        builder.AddMessageBroker<BattleSceneMessage.NewLogSizeMessage>();
+        builder.AddMessageBroker<BattleSceneMessage.DisableLogMessage>();
+        builder.AddMessageBroker<BattleSceneMessage.DamageNoticeMessage>();
 
         //zzzTester
         /*

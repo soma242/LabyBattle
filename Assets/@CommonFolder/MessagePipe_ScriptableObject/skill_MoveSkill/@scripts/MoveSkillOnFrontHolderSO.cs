@@ -5,21 +5,20 @@ using UnityEngine;
 using MessagePipe;
 using SkillStruct;
 
-[CreateAssetMenu(menuName = "skillHolder/moveOnFront")]
+[CreateAssetMenu(menuName = "MessageableSO/Component/skillHolder/moveOnFront")]
 public class MoveSkillOnFrontHolderSO : MSO_SkillHolderSO
 {
-    [SerializeField]
-    private MSO_MoveFrontSkillSO skillEffectSO;
+ //   [SerializeField]
+    public MSO_MoveFrontSkillSO skillEffectSO;
+    public MSO_MoveSkillTargetSO skillTarget;
 
-    private IPublisher<sbyte, RegistMoveSkillOnFront> registPub;
 
-    public override void MessageStart()
-    {
-        base.MessageStart();
-        registPub = GlobalMessagePipe.GetPublisher<sbyte, RegistMoveSkillOnFront>();
-    }
+    //private IPublisher<sbyte, RegistMoveSkillOnFront> registPub;
+
+
     public override void RegistThisSkill(sbyte formNum)
     {
+        var registPub = GlobalMessagePipe.GetPublisher<sbyte, RegistMoveSkillOnFront>();
 
         if (registed)
         {
@@ -32,5 +31,11 @@ public class MoveSkillOnFrontHolderSO : MSO_SkillHolderSO
             registed = false;
         });
         registPub.Publish(formNum, new RegistMoveSkillOnFront(this));
+    }
+
+
+    public virtual int GetSkillKey()
+    {
+        return skillEffectSO.moveKey;
     }
 }

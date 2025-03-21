@@ -12,8 +12,8 @@ public class MSO_MoveSkillCommander : MessageableScriptableObject
     //Hashsetは要素番号からの直接呼出しが見つからなかったため，listを用いる。
     [SerializeField] private List<MSO_MoveSkillSO> moveCatalog = new List<MSO_MoveSkillSO>();
 
-    private ISubscriber<MoveSkillCommand> commandSub;
-    private ISubscriber<TargetingMoveSkillCommand> targetingCommandSub;
+    //private ISubscriber<MoveSkillCommand> commandSub;
+    private ISubscriber<MoveSkillCommand>moveCommandSub;
     private System.IDisposable disposable;
 
 
@@ -24,16 +24,17 @@ public class MSO_MoveSkillCommander : MessageableScriptableObject
         SortEnum();
 #endif
         var bag = DisposableBag.CreateBuilder();
-        
-        commandSub = GlobalMessagePipe.GetSubscriber<MoveSkillCommand>();
-        targetingCommandSub = GlobalMessagePipe.GetSubscriber<TargetingMoveSkillCommand>();
 
-        commandSub.Subscribe(i => {
-            moveCatalog[i.moveNum].MoveSkillBoot(i.formNum);
-        }).AddTo(bag);
+        //commandSub = GlobalMessagePipe.GetSubscriber<MoveSkillCommand>();
+        moveCommandSub = GlobalMessagePipe.GetSubscriber<MoveSkillCommand>();
 
-        targetingCommandSub.Subscribe(i => {
-            moveCatalog[i.moveNum].MoveSkillBoot(i.formNum, i.targetNum);
+        ///commandSub.Subscribe(i => {
+        //    moveCatalog[i.moveNum].MoveSkillBoot(i.formNum);
+        //}).AddTo(bag);
+
+        moveCommandSub.Subscribe(i => {
+            //Debug.Log(i);
+            moveCatalog[i.moveKey].MoveSkillBoot(i.movePos);
         }).AddTo(bag);
 
         disposable = bag.Build();
@@ -61,7 +62,7 @@ public class MSO_MoveSkillCommander : MessageableScriptableObject
             //activeSkillSO.MessageDependencyInjection();
             foreach (MSO_MoveSkillSO moveSkill in moveCatalog)
             {
-                moveSkill.moveKey.SetMoveNum(j);
+                moveSkill.moveKey = j;
                 j++;
             }
 

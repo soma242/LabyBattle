@@ -9,8 +9,8 @@ using SkillStruct;
 [CreateAssetMenu(menuName = "MessageableSO/Component/calc/MSO_DamageCalcSO")]
 public class MSO_DamageCalcSO : MessageableScriptableObject
 {
-    private int tempAttack;
-    private int damage;
+    //private int tempAttack;
+    //private float damage;
 
     //MessagePipe
     //Publisher
@@ -18,47 +18,77 @@ public class MSO_DamageCalcSO : MessageableScriptableObject
     private IPublisher<sbyte, NormalDamageCalcMessage> normalDamagePub;
 
     //Subscriber
-    private ISubscriber<NormalAttack> normalAttack;
+    private ISubscriber<NormalAttack> normalAttackSub;
+    private ISubscriber<NormalMagic> normalMagicSub;
     private System.IDisposable disposable;
 
 
 
-    //ダメージ計算用の関数。
-    private int NormalFormula(MSO_FormationCharaSO fromSO, float activeRatio)
-    {
-        int damageCalc = Mathf.FloorToInt(fromSO.GetActualAttack() * activeRatio);
 
-#if UNITY_EDITOR
-        Debug.Log("attack: "+ fromSO.setChara.GetAttack());
-        Debug.Log("actualAttack: "+ fromSO.GetActualAttack());
-        Debug.Log("activeRatio: "+ activeRatio);
-#endif
-
-        return damageCalc;
-    }
 
     public override void MessageStart() {
 
+        //Normal
         //pub
         normalDamagePub = GlobalMessagePipe.GetPublisher<sbyte, NormalDamageCalcMessage>();
 
         //sub
-        normalAttack = GlobalMessagePipe.GetSubscriber<NormalAttack>();
+        normalAttackSub = GlobalMessagePipe.GetSubscriber<NormalAttack>();
+        normalMagicSub = GlobalMessagePipe.GetSubscriber<NormalMagic>();
 
+        var bag = DisposableBag.CreateBuilder();
 
-
-        disposable = normalAttack.Subscribe(i =>
+        normalAttackSub.Subscribe(i =>
         {
-            NormalAttackBoot(i);
-        });
+            float damage = NormalPhysicalFormula(i.activePos.userSO, i.activeRatio);
+            //Debug.Log(damage);
+
+            normalDamagePub.Publish(i.activePos.target, new NormalDamageCalcMessage(false, damage, i.activePos));
+        }).AddTo(bag);
+
+        normalMagicSub.Subscribe(i =>
+        {
+            float damage = NormalMagicFormula(i.activePos.userSO, i.activeRatio);
+            //Debug.Log(name);
+            normalDamagePub.Publish(i.activePos.target, new NormalDamageCalcMessage(true, damage, i.activePos));
+        }).AddTo(bag);
     }
 
-    //subで受け取った対象のスキルの処理を行う関数
-    private void NormalAttackBoot(NormalAttack message)
+
+
+
+    //ダメージ計算用の関数。
+    private float NormalPhysicalFormula(IGetFormationInfo info, float activeRatio)
     {
-        damage = NormalFormula(message.activePos.fromSO, message.activeRatio);
-        Debug.Log(damage);
-        //normalDamagePub.Publish(activePos.to, new NormalDamageCalcMessage(activePos));
+        //int damageCalc = Mathf.FloorToInt(info.GetActualAttack() * activeRatio);
+
+        float damageCalc = info.GetActualAttack() * activeRatio;
+
+        
+#if UNITY_EDITOR
+        Debug.Log("actualAttack: "+ info.GetActualAttack());
+        Debug.Log("activeRatio: "+ activeRatio);
+#endif
+        
+
+
+        return damageCalc;
+    }
+    
+    private float NormalMagicFormula(IGetFormationInfo info, float activeRatio)
+    {
+        //int damageCalc = Mathf.FloorToInt(info.GetActualMagic() * activeRatio);
+        float damageCalc = info.GetActualMagic() * activeRatio;
+
+        
+#if UNITY_EDITOR
+        Debug.Log("actualMagic: "+ info.GetActualMagic());
+        Debug.Log("activeRatio: "+ activeRatio);
+#endif
+        
+
+
+        return damageCalc;
     }
 
 }

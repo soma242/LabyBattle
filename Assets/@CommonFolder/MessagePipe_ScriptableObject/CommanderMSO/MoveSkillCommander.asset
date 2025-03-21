@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: MoveSkillCommander
   m_EditorClassIdentifier: 
   moveCatalog:
+  - {fileID: 11400000, guid: 4607198cf98f2ca4d992a3179195ef1a, type: 2}
   - {fileID: 11400000, guid: 879d6fab917e7154c8306c2631d6c0ab, type: 2}
   - {fileID: 11400000, guid: 4bd8ea15b353c0e4389ab3dd757e4034, type: 2}
-  - {fileID: 11400000, guid: 399f355fc96748e4fbec26fe614b4f05, type: 2}
+  - {fileID: 11400000, guid: cbba1a90d9185724d9d82ddc84a323de, type: 2}
+  - {fileID: 11400000, guid: 337291feb3dc871419daa0244956445c, type: 2}

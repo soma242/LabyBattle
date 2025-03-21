@@ -14,79 +14,117 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 
 #pragma warning disable CS4014 // disable warning
+#pragma warning disable CS1998 // disable warning
 
 using BattleSceneMessage;
 using SkillStruct;
 
-public class MoveOptionController : MonoBehaviour
+using UnityEngine.EventSystems;
+
+
+public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
     private int listNum;
 
-    //Layer
-    [SerializeField]
-    protected InputLayerSO inputLayerSO;
 
     [SerializeField]
-    protected TMP_Text text;
+    private TMP_Text text;
 
     //自分の識別番号と自分からつながる識別番号
     [SerializeField]
-    protected int myNum;
+    private int myNum;
     [SerializeField]
-    protected int upNum;
+    private int upNum;
     [SerializeField]
-    protected int downNum;
+    private int downNum;
 
     [SerializeField]
-    protected SelectSourceImageSO sourceImageSO;
+    private SelectSourceImageSO sourceImageSO;
 
     //アタッチされたオブジェクトのイメージ
-    protected Image image;
+    private Image image;
 
-    protected SkillListHolderSO skillListHolderSO;
-    protected MovePosition currentPos;
+    private SkillListHolderSO skillListHolderSO;
+
+    private MovePosition currentPos;
 
     //MessagePipe
 
+    private CancellationTokenSource cts;
+    private IPublisher<DescriptionDemendMessage> descDemendPub;
+    private IPublisher<DescriptionFinishMessage> descFinishPub;
+
+    private IPublisher<ASkillSimulateMessage> simulatePub;
+
     //select変更用MessagePipe
     //BuiltInContainer
-    protected IPublisher<SelectMessage, SelectChange> selectPublisher;
-    protected ISubscriber<SelectMessage, SelectChange> selectSubscriber;
+    private IPublisher<SelectMessage, SelectChange> selectPublisher;
+    private ISubscriber<SelectMessage, SelectChange> selectSubscriber;
 
     //SkillList受け入れ
-    protected ISubscriber<SelectSkillListChangeMessage> skillListSub;
+    private ISubscriber<SelectSkillListChangeMessage> skillListSub;
 
-    protected System.IDisposable disposableOnDestroy;
+    private System.IDisposable disposableOnDestroy;
+
+    private ISubscriber<MoveSimulateMessage> moveSimuSub;
+    private System.IDisposable disposableSimu;
 
 
+    
 
-    //Input受け入れ用MessagePipe
-    //VContainer
-    [Inject] protected readonly ISubscriber<InputLayerSO, UpInput> upSubscriber;
-    [Inject] protected readonly ISubscriber<InputLayerSO, DownInput> downSubscriber;
-    [Inject] protected readonly ISubscriber<InputLayerSO, RightInput> rightSubscriber;
-    [Inject] protected readonly ISubscriber<InputLayerSO, LeftInput> leftSubscriber;
+    private System.IDisposable disposableSkill;
 
-    protected System.IDisposable disposableInput;
+    private IAsyncSubscriber<ActionSelectBookMessage> bookASub;
+    private IPublisher<BookCommonMoveKeyMessage> bookKeyPub;
+
+    private System.IDisposable disposableBook;
+
 
     //関数
-    protected void Awake()
+    private void Awake()
     {
         image = GetComponent<Image>();
 
         listNum = 0;
 
         //BuiltInContainer
+
+
+        descDemendPub = GlobalMessagePipe.GetPublisher<DescriptionDemendMessage>();
+        descFinishPub = GlobalMessagePipe.GetPublisher<DescriptionFinishMessage>();
+
         selectPublisher = GlobalMessagePipe.GetPublisher<SelectMessage, SelectChange>();
         selectSubscriber = GlobalMessagePipe.GetSubscriber<SelectMessage, SelectChange>();
 
         skillListSub = GlobalMessagePipe.GetSubscriber<SelectSkillListChangeMessage>();
 
+        moveSimuSub = GlobalMessagePipe.GetSubscriber<MoveSimulateMessage>();
+
+        bookASub = GlobalMessagePipe.GetAsyncSubscriber<ActionSelectBookMessage>();
+        bookKeyPub = GlobalMessagePipe.GetPublisher<BookCommonMoveKeyMessage>();
+
+
+
         var bag = DisposableBag.CreateBuilder();
 
+        //SkillListSubの前に個々に入ってしまっている。
         selectSubscriber.Subscribe(new SelectMessage(inputLayerSO, myNum), i =>
         {
+            disposableSkill?.Dispose();
+            disposableBook?.Dispose();
             SelectThisComponent();
+            if (currentPos == MovePosition.front)
+            {
+                ChangeSkillOnFrontPrepare();
+
+
+            }
+            else
+            {
+                ChangeSkillOnBackPrepare();
+                
+            }
+
         }).AddTo(bag);
 
         skillListSub.Subscribe(get =>
@@ -94,33 +132,77 @@ public class MoveOptionController : MonoBehaviour
             listNum = 0;
             skillListHolderSO = get.skillListHolderSO;
             currentPos = get.currentPos;
+
+
+
             if(currentPos == MovePosition.front)
             {
+                disposableSimu?.Dispose();
                 text.SetText(skillListHolderSO.mFrontSkillCatalog[listNum].GetSkillName());
+                skillListHolderSO.mFrontSkillCatalog[listNum].skillTarget.SetTargetSort();
+                disposableSimu = moveSimuSub.Subscribe(get =>
+                {
+                    skillListHolderSO.mFrontSkillCatalog[listNum].skillEffectSO.MoveSkillSimulate(get.target);
+
+                });
+                disposableBook = bookASub.Subscribe(async (get, ct) =>
+                {
+                    bookKeyPub.Publish(new BookCommonMoveKeyMessage(skillListHolderSO.mFrontSkillCatalog[listNum].GetSkillKey()));
+                });
+
+                ChangeSkillOnFrontPrepare();
+
+
             }
             else
             {
+
+                disposableSimu?.Dispose();
                 text.SetText(skillListHolderSO.mBackSkillCatalog[listNum].GetSkillName());
+                skillListHolderSO.mBackSkillCatalog[listNum].skillTarget.SetTargetSort();
+                disposableSimu = moveSimuSub.Subscribe(get =>
+                {
+                    skillListHolderSO.mBackSkillCatalog[listNum].skillEffectSO.MoveSkillSimulate(get.target);
+
+                });
+                disposableBook = bookASub.Subscribe(async (get, ct) =>
+                {
+                    bookKeyPub.Publish(new BookCommonMoveKeyMessage(skillListHolderSO.mBackSkillCatalog[listNum].GetSkillKey()));
+                });
+
+                ChangeSkillOnBackPrepare();
+
             }
         }).AddTo(bag);
+
+
 
         disposableOnDestroy = bag.Build();
     }
 
     void OnDestroy()
     {
-        disposableOnDestroy.Dispose();
+        disposableInput?.Dispose();
+        disposableOnDestroy?.Dispose();
+        disposableSkill?.Dispose();
     }
 
-    protected async UniTask SelectThisComponent()
+    private async UniTask SelectThisComponent()
     {
+
+        //順番大事
+        selectDispPub.Publish(inputLayerSO, new DisposeSelect());
+
+        //現在走っているPublishを受け入れないために1frame待つ
+        await UniTask.NextFrame();
 
         image.sprite = sourceImageSO.onSelect;
 
         var bag = DisposableBag.CreateBuilder();
 
-        //現在走っているPublishを受け入れないために1frame待つ
-        await UniTask.NextFrame();
+
+
+
 
 
         upSubscriber.Subscribe(inputLayerSO, i => {
@@ -130,40 +212,151 @@ public class MoveOptionController : MonoBehaviour
         downSubscriber.Subscribe(inputLayerSO, i => {
             NextDownSelect();
         }).AddTo(bag);
+        enterSub.Subscribe(inputLayerSO, i => {
+            NextDownSelect();
+        }).AddTo(bag);
 
-        if(currentPos == MovePosition.front)
+        selectDispSub.Subscribe(inputLayerSO, i =>
         {
-            rightSubscriber.Subscribe(inputLayerSO, i => {
-                AddListNumOnFront();
-                text.SetText(skillListHolderSO.mFrontSkillCatalog[listNum].GetSkillName());
-            }).AddTo(bag);
+            UnselectThisComponent();
+        }).AddTo(bag);
 
-            leftSubscriber.Subscribe(inputLayerSO, i =>
-            {
-                DeductListNumOnFront();
-                text.SetText(skillListHolderSO.mFrontSkillCatalog[listNum].GetSkillName());
-            }).AddTo(bag);
-        }
-        else
-        {
-            rightSubscriber.Subscribe(inputLayerSO, i => {
-                AddListNumOnBack();
-                text.SetText(skillListHolderSO.mBackSkillCatalog[listNum].GetSkillName());
-            }).AddTo(bag);
 
-            leftSubscriber.Subscribe(inputLayerSO, i =>
-            {
-                DeductListNumOnBack();
-                text.SetText(skillListHolderSO.mBackSkillCatalog[listNum].GetSkillName());
-            }).AddTo(bag);
-        }
         
 
 
         disposableInput = bag.Build();
     }
 
-    protected void AddListNumOnFront()
+    private void ChangeSkillOnFrontPrepare()
+    {
+        disposableSkill?.Dispose();
+
+        var bag = DisposableBag.CreateBuilder();
+
+        rightSubscriber.Subscribe(inputLayerSO, i => {
+            AddListNumOnFront();
+            text.SetText(skillListHolderSO.mFrontSkillCatalog[listNum].GetSkillName());
+
+            skillListHolderSO.mFrontSkillCatalog[listNum].skillTarget.SetTargetSort();
+            //skillListHolderSO.mFrontSkillCatalog[listNum].skillEffectSO.MoveSkillSimulate();
+
+
+        }).AddTo(bag);
+
+        leftSubscriber.Subscribe(inputLayerSO, i =>
+        {
+            DeductListNumOnFront();
+            text.SetText(skillListHolderSO.mFrontSkillCatalog[listNum].GetSkillName());
+
+            skillListHolderSO.mFrontSkillCatalog[listNum].skillTarget.SetTargetSort();
+            //skillListHolderSO.mFrontSkillCatalog[listNum].skillEffectSO.MoveSkillSimulate();
+
+
+        }).AddTo(bag);
+
+        disposableSkill = bag.Build();
+    }
+
+    private void ChangeSkillOnBackPrepare()
+    {
+        disposableSkill?.Dispose();
+
+        var bag = DisposableBag.CreateBuilder();
+
+        rightSubscriber.Subscribe(inputLayerSO, i => {
+            AddListNumOnBack();
+            text.SetText(skillListHolderSO.mBackSkillCatalog[listNum].GetSkillName());
+
+            skillListHolderSO.mBackSkillCatalog[listNum].skillTarget.SetTargetSort();
+            //skillListHolderSO.mBackSkillCatalog[listNum].skillEffectSO.MoveSkillSimulate();
+
+            //Debug.Log(skillListHolderSO.mBackSkillCatalog[listNum].GetSkillName());
+        }).AddTo(bag);
+
+        leftSubscriber.Subscribe(inputLayerSO, i =>
+        {
+            DeductListNumOnBack();
+            text.SetText(skillListHolderSO.mBackSkillCatalog[listNum].GetSkillName());
+
+            skillListHolderSO.mBackSkillCatalog[listNum].skillTarget.SetTargetSort();
+           // skillListHolderSO.mBackSkillCatalog[listNum].skillEffectSO.MoveSkillSimulate();
+
+
+        }).AddTo(bag);
+
+        disposableSkill = bag.Build();
+
+    }
+
+    public async void OnPointerEnter(PointerEventData pointerEventData)
+    {
+        cts?.Cancel();
+        cts = new CancellationTokenSource();
+        try
+        {
+            await WaitForSecond(cts);
+            if (currentPos == MovePosition.front)
+            {
+                descDemendPub.Publish(new DescriptionDemendMessage(skillListHolderSO.mFrontSkillCatalog[listNum].GetDescription()));
+
+            }
+            else
+            {
+                descDemendPub.Publish(new DescriptionDemendMessage(skillListHolderSO.mBackSkillCatalog[listNum].GetDescription()));
+
+            }
+
+        }
+        catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token)
+        {
+#if UNITY_EDITOR
+                    if (cts.IsCancellationRequested)
+                    {
+                        // 引数のCancellationTokenが原因なので、それを保持したOperationCanceledExceptionとして投げる
+                        //throw new OperationCanceledException(ex.Message, ex, cts.Token);
+                    }
+                    else
+                    {
+                        // タイムアウトが原因なので、TimeoutException(或いは独自の例外)として投げる
+                        throw new TimeoutException("The request was canceled due to the configured Timeout ");
+                    }
+#endif
+
+
+        }
+
+    }
+
+    public void OnPointerExit(PointerEventData pointerEventData)
+    {
+        cts?.Cancel();
+        descFinishPub.Publish(new DescriptionFinishMessage());
+    }
+
+    
+    public async void OnPointerClick(PointerEventData pointerEventData)
+    {
+        SelectThisComponent();
+        if (currentPos == MovePosition.front)
+        {
+            ChangeSkillOnFrontPrepare();
+        }
+        else
+        {
+            ChangeSkillOnBackPrepare();
+        }
+
+    }
+
+    private async UniTask WaitForSecond(CancellationTokenSource cts)
+    {
+        await UniTask.Delay(TimeSpan.FromSeconds(1.5f), cancellationToken: cts.Token);
+
+    }
+
+
+    private void AddListNumOnFront()
     {
 
         if (skillListHolderSO.mFrontSkillCatalog.Count - 1 != listNum)
@@ -179,7 +372,7 @@ public class MoveOptionController : MonoBehaviour
 
     }
 
-    protected void DeductListNumOnFront()
+    private void DeductListNumOnFront()
     {
 
         if (listNum != 0)
@@ -193,7 +386,7 @@ public class MoveOptionController : MonoBehaviour
 
     }
 
-    protected void AddListNumOnBack()
+    private void AddListNumOnBack()
     {
 
         if (skillListHolderSO.mBackSkillCatalog.Count - 1 != listNum)
@@ -209,7 +402,7 @@ public class MoveOptionController : MonoBehaviour
 
     }
 
-    protected void DeductListNumOnBack()
+    private void DeductListNumOnBack()
     {
 
         if (listNum != 0)
@@ -223,13 +416,14 @@ public class MoveOptionController : MonoBehaviour
 
     }
 
-    protected void UnselectThisComponent()
+    private void UnselectThisComponent()
     {
-        disposableInput.Dispose();
+        disposableInput?.Dispose();
+        disposableSkill?.Dispose();
         image.sprite = sourceImageSO.offSelect;
     }
 
-    protected void NextUpSelect()
+    private void NextUpSelect()
     {
 
         UnselectThisComponent();
@@ -237,7 +431,7 @@ public class MoveOptionController : MonoBehaviour
 
     }
 
-    protected void NextDownSelect()
+    private void NextDownSelect()
     {
         UnselectThisComponent();
 

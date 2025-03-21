@@ -15,4 +15,5 @@ MonoBehaviour:
   skillName: "\u5F85\u6A5F"
   description: "\u73FE\u5728\u306E\u8DDD\u96E2\u3092\u4FDD\u3064"
   registed: 0
-  skillEffectSO: {fileID: 11400000, guid: 399f355fc96748e4fbec26fe614b4f05, type: 2}
+  skillEffectSO: {fileID: 11400000, guid: cbba1a90d9185724d9d82ddc84a323de, type: 2}
+  skillTarget: {fileID: 11400000, guid: 732512a6400290746a413c021656ab4b, type: 2}

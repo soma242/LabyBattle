@@ -14,17 +14,22 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 
 #pragma warning disable CS4014 // disable warning
+#pragma warning disable CS1998 // disable warning
+
 
 using BattleSceneMessage;
 using SkillStruct;
 
-public class ActionTargetController : MonoBehaviour
-{
-    private int listNum;
+using UnityEngine.EventSystems;
 
-    //Layer
-    [SerializeField]
-    private InputLayerSO inputLayerSO;
+
+public class ActionTargetController : BaseSelectMessageHolder, IPointerClickHandler
+{
+
+    private sbyte targetPos;
+
+    private bool targeting;
+
 
     [SerializeField]
     private TMP_Text text;
@@ -50,55 +55,142 @@ public class ActionTargetController : MonoBehaviour
     private IPublisher<SelectMessage, SelectChange> selectPublisher;
     private ISubscriber<SelectMessage, SelectChange> selectSubscriber;
 
+    private System.IDisposable disposableSelect;
+
     private System.IDisposable disposableOnDestroy;
 
 
 
-    //Input受け入れ用MessagePipe
-    [Inject] private readonly ISubscriber<InputLayerSO, UpInput> upSubscriber;
-    [Inject] private readonly ISubscriber<InputLayerSO, DownInput> downSubscriber;
-    [Inject] private readonly ISubscriber<InputLayerSO, RightInput> rightSubscriber;
-    [Inject] private readonly ISubscriber<InputLayerSO, LeftInput> leftSubscriber;
 
-    private System.IDisposable disposableInput;
+    private System.IDisposable disposableTarget;
+
+
+    private ISubscriber<ReturnTargetName> returnTargetSub;
+    private IPublisher<sbyte, GetNextTargetName> nextTargetPub;
+    private IPublisher<sbyte, GetPreTargetName> preTargetPub;
+
+    private System.IDisposable disposableReturn;
+
+    private ISubscriber<Active_SingleEnemyTarget> singleEnemySub;
+    private ISubscriber<Active_SingleCharaTarget> singleCharaSub;
+
+
+    private IAsyncSubscriber<ActionSelectBookMessage> bookASub;
+    private IPublisher<BookCommonActiveTargetMessage> bookTargetPub;
 
     void Awake()
     {
         image = GetComponent<Image>();
 
-        listNum = 0;
+        //cts = new CancellationTokenSource();
+
 
         //BuiltInContainer
         selectPublisher = GlobalMessagePipe.GetPublisher<SelectMessage, SelectChange>();
         selectSubscriber = GlobalMessagePipe.GetSubscriber<SelectMessage, SelectChange>();
 
+        singleEnemySub = GlobalMessagePipe.GetSubscriber<Active_SingleEnemyTarget>();
+        singleCharaSub = GlobalMessagePipe.GetSubscriber<Active_SingleCharaTarget>();
+
+        returnTargetSub = GlobalMessagePipe.GetSubscriber<ReturnTargetName>();
+        nextTargetPub = GlobalMessagePipe.GetPublisher<sbyte, GetNextTargetName>();
+        preTargetPub = GlobalMessagePipe.GetPublisher<sbyte, GetPreTargetName>();
+
+        bookASub = GlobalMessagePipe.GetAsyncSubscriber<ActionSelectBookMessage>();
+        bookTargetPub = GlobalMessagePipe.GetPublisher<BookCommonActiveTargetMessage>();
+
 
         var bag = DisposableBag.CreateBuilder();
 
+        /*
         selectSubscriber.Subscribe(new SelectMessage(inputLayerSO, myNum), i =>
         {
             SelectThisComponent();
         }).AddTo(bag);
+        */
 
-        
+        singleEnemySub.Subscribe( get =>
+        {
+            disposableSelect?.Dispose();
+            //増えてくるようならSOに纏めてアタッチ
+            targetPos = FormationScope.FirstEnemy();
+            targeting = true;
+
+            disposableReturn = returnTargetSub.Subscribe(get =>
+            {
+                targetPos = get.targetPos;
+                text.SetText(get.targetName);
+                disposableReturn?.Dispose();
+            });
+            //next,preは受け取り側で次に回すための分割なので，現在のものを受け取りたければどちらでもいい
+            //=>逆にPublishだけで次にはいってくれない
+            nextTargetPub.Publish(targetPos, new GetNextTargetName());
+            
+            disposableSelect = selectSubscriber.Subscribe(new SelectMessage(inputLayerSO, myNum), i =>
+            {
+                SelectThisComponent();
+                ChangeTargetPrepare();
+            });
+
+
+        }).AddTo(bag);
+
+        singleCharaSub.Subscribe(get =>
+        {
+            disposableSelect?.Dispose();
+
+            targetPos = FormationScope.FirstChara();
+            targeting = true;
+
+            //targetPosの更新のタイミングがSub時なので連続入力も問題ないはず（ここではInputSystemなので短時間の連続入力は不可）
+            disposableReturn = returnTargetSub.Subscribe(get =>
+            {
+                targetPos = get.targetPos;
+                text.SetText(get.targetName);
+                disposableReturn?.Dispose();
+            });
+            //next,preは受け取り側で次に回すための分割なので，現在のものを受け取りたければどちらでもいい
+            //=>逆にPublishだけで次にはいってくれない
+            nextTargetPub.Publish(targetPos, new GetNextTargetName());
+
+            disposableSelect = selectSubscriber.Subscribe(new SelectMessage(inputLayerSO, myNum), i =>
+            {
+                SelectThisComponent();
+                ChangeTargetPrepare();
+            });
+        }).AddTo(bag);
+
+        bookASub.Subscribe(async (get, ct) =>
+        {
+            bookTargetPub.Publish(new BookCommonActiveTargetMessage(targetPos));
+        }).AddTo(bag);
+
 
         disposableOnDestroy = bag.Build();
     }
 
     void OnDestroy()
     {
-        disposableOnDestroy.Dispose();
+        disposableOnDestroy?.Dispose();
+        disposableTarget?.Dispose();
+        disposableSelect?.Dispose();
+        disposableInput?.Dispose();
+        disposableReturn?.Dispose();
     }
 
     private async UniTask SelectThisComponent()
     {
+        selectDispPub.Publish(inputLayerSO, new DisposeSelect());
+
+
+        //現在走っているPublishを受け入れないために1frame待つ
+        await UniTask.NextFrame();
 
         image.sprite = sourceImageSO.onSelect;
 
         var bag = DisposableBag.CreateBuilder();
 
-        //現在走っているPublishを受け入れないために1frame待つ
-        await UniTask.NextFrame();
+
 
 
         upSubscriber.Subscribe(inputLayerSO, i => {
@@ -108,40 +200,75 @@ public class ActionTargetController : MonoBehaviour
         downSubscriber.Subscribe(inputLayerSO, i => {
             NextDownSelect();
         }).AddTo(bag);
-
-        rightSubscriber.Subscribe(inputLayerSO, i => {
-            AddListNum();
-            //text.SetText(skillListHolderSO.aSkillCatalog[listNum].GetSkillName());
+        enterSub.Subscribe(inputLayerSO, i => {
+            NextDownSelect();
         }).AddTo(bag);
 
-        leftSubscriber.Subscribe(inputLayerSO, i =>
+        selectDispSub.Subscribe(inputLayerSO, i => 
         {
-            DeductListNum();
-            //text.SetText(skillListHolderSO.aSkillCatalog[listNum].GetSkillName());
+            UnselectThisComponent();
         }).AddTo(bag);
 
 
         disposableInput = bag.Build();
     }
 
+    //Targetの変更を行わない可能性があるので分離，
+    //await UniTask.NextFrame();を追加していないのでSelectThisComponentの後ろに登録する。
+
+    private void ChangeTargetPrepare()
+    {
+        var bag = DisposableBag.CreateBuilder();
+
+        rightSubscriber.Subscribe(inputLayerSO, i => {
+            //Debug.Log(targetPos);
+            disposableReturn = returnTargetSub.Subscribe(get =>
+            {
+                targetPos = get.targetPos;
+                text.SetText(get.targetName);
+                //Debug.Log("sub");
+                disposableReturn?.Dispose();
+            });
+
+            nextTargetPub.Publish(NextFormNum(targetPos), new GetNextTargetName());
+            //await UniTask.Delay(TimeSpan.FromSeconds(3f));
+            //Debug.Log(NextFormNum(targetPos));
+
+        }).AddTo(bag);
+
+        leftSubscriber.Subscribe(inputLayerSO, i =>
+        {
+            disposableReturn = returnTargetSub.Subscribe(get =>
+            {
+                targetPos = get.targetPos;
+                text.SetText(get.targetName);
+                //Debug.Log("sub");
+                disposableReturn.Dispose();
+            });
+
+            preTargetPub.Publish(PreFormNum(targetPos), new GetPreTargetName());
+        }).AddTo(bag);
+
+        disposableTarget = bag.Build();
+
+    }
+
     private void UnselectThisComponent()
     {
-        disposableInput.Dispose();
+
+        disposableInput?.Dispose();
+        disposableTarget?.Dispose();
         image.sprite = sourceImageSO.offSelect;
     }
 
-    private void AddListNum()
+    
+    public async void OnPointerClick(PointerEventData pointerEventData)
     {
-
-
-
-    }
-
-    private void DeductListNum()
-    {
-
-
-
+        SelectThisComponent();
+        if (targeting)
+        {
+            ChangeTargetPrepare();
+        }
     }
 
 
@@ -160,5 +287,16 @@ public class ActionTargetController : MonoBehaviour
 
         selectPublisher.Publish(new SelectMessage(inputLayerSO, downNum), new SelectChange());
 
+    }
+
+    private sbyte NextFormNum(sbyte i)
+    {
+        i++;
+        return i;
+    }
+    private sbyte PreFormNum(sbyte i)
+    {
+        i--;
+        return i;
     }
 }

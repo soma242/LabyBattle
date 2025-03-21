@@ -16,7 +16,12 @@ MonoBehaviour:
   charaImages: {fileID: 11400000, guid: c2521f47c37e08e48953bb9ac38dcdd3, type: 2}
   skillTreeCatalog:
   - skillTreeSO: {fileID: 11400000, guid: 7da3e45f7dadc7143bc09973aea52f77, type: 2}
-    treeLevel: 1
-  maxHP: 1000
+    treeLevel: 4
+  charaName: hero
+  maxHP: 5000
   attack: 50
+  magic: 0
+  defence: 0
+  mDefence: 0
   agility: 15
+  targetRate: 50

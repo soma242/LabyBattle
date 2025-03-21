@@ -25,7 +25,7 @@ public class CharaNameSimulator : MonoBehaviour
         prepareASub = GlobalMessagePipe.GetAsyncSubscriber<BattlePrepareMessage>();
         disposable = prepareASub.Subscribe(async (get, ct) =>
         {
-            nameText.SetText(formationSO.setChara.name);
+            nameText.SetText(formationSO.setChara?.name);
         });
 
         //nameText.SetText("myNameIs");

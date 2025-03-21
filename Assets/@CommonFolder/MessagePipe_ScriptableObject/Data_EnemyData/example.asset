@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: example
   m_EditorClassIdentifier: 
   enemyImage: {fileID: 11400000, guid: 6411bd2c44c32444abddceea51f5d916, type: 2}
+  skillCatalog: {fileID: 11400000, guid: 19555a0a34e4a4e4ead99eb92b905918, type: 2}
+  enemyName: firstEnemy
   HP: 500
   attack: 400
   agility: 10

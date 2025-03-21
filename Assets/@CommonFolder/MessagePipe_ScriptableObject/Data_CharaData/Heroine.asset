@@ -9,12 +9,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5df61d4ab50b210479de7c0233c2b46e, type: 3}
+  m_Script: {fileID: 11500000, guid: 57dc2846407709c419cef447f7645522, type: 3}
   m_Name: Heroine
   m_EditorClassIdentifier: 
   charaKey: {fileID: 11400000, guid: 7200d5d28fa7fa94b9dbd203bef3958f, type: 2}
   charaImages: {fileID: 11400000, guid: cc2b10b13f677a94f9ee0a0cfec9157e, type: 2}
-  skillTreeCatalog: []
-  maxHP: 200
-  attack: 400
+  skillTreeCatalog:
+  - skillTreeSO: {fileID: 11400000, guid: 58762f2bddaf485469ce04167df4c75f, type: 2}
+    treeLevel: 1
+  charaName: heroine
+  maxHP: 1600
+  attack: 40
+  magic: 1000
+  defence: 0
+  mDefence: 0
   agility: 7
+  targetRate: 50

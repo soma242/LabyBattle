@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   charaCatalog:
   - {fileID: 11400000, guid: e1e325bcf4aa74640995c7437944732c, type: 2}
-  - {fileID: 11400000, guid: b6252ee9488258640acc24a8825a0150, type: 2}
+  - {fileID: 11400000, guid: a07ea652b75303740ad868131af4a5e0, type: 2}
   - {fileID: 11400000, guid: 27acbac3084fdfe49b20e7185c35f3be, type: 2}
-  - {fileID: 11400000, guid: acd8a841cb8c9c246b8af8b0a2e6871a, type: 2}
+  - {fileID: 11400000, guid: 4a655b2d10b0dac4b8a2c030fca27231, type: 2}

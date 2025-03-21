@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+guid: 44d292862d44ba8488f592fa01761c0f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - battleLog: {fileID: 5851276067389010793, guid: 21143ec7d6deba14da0dbdf53c21c7e4, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

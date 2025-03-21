@@ -30,7 +30,7 @@ public class MSO_ActiveSkillCommander : MessageableScriptableObject
         commandSubscriber = GlobalMessagePipe.GetSubscriber<ActiveSkillCommand>();
 
         disposable = commandSubscriber.Subscribe(i =>{
-            activeCatalog[i.activeNum].ActiveSkillBoot(i.activePos);
+            activeCatalog[i.activeKey].ActiveSkillBoot(i.activePos);
         });
 
     }
@@ -56,7 +56,7 @@ public class MSO_ActiveSkillCommander : MessageableScriptableObject
             //activeSkillSO.MessageDependencyInjection();
             foreach (MSO_ActiveSkillSO activeSkill in activeCatalog)
             {
-                activeSkill.activeKey.activeNum = j;
+                activeSkill.activeKey = j;
                 j++;
             }
 

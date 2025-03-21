@@ -13,5 +13,7 @@ MonoBehaviour:
   m_Name: _2_second
   m_EditorClassIdentifier: 
   formNumSO: {fileID: 11400000, guid: 45a145bc035691c418c0ad8ed83d6f6e, type: 2}
-  setChara: {fileID: 11400000, guid: b6252ee9488258640acc24a8825a0150, type: 2}
+  participant: 1
+  setChara: {fileID: 11400000, guid: a07ea652b75303740ad868131af4a5e0, type: 2}
   skillListHolderSO: {fileID: 11400000, guid: edd174d18b927574d8205d33eaeb6cf7, type: 2}
+  firstPos: 1

@@ -9,9 +9,9 @@ public class SkillListHolderSO : ScriptableObject
     //private sbyte formNum;
 
     
-    public List<ActiveSkillHolderSO> aSkillCatalog = new List<ActiveSkillHolderSO>();
+    public List<MSO_ActiveSkillHolderSO> aSkillCatalog = new List<MSO_ActiveSkillHolderSO>();
     public List<MoveSkillOnFrontHolderSO> mFrontSkillCatalog = new List<MoveSkillOnFrontHolderSO>();
     public List<MoveSkillOnBackHolderSO> mBackSkillCatalog = new List<MoveSkillOnBackHolderSO>();
 
-    public virtual void RegistThisSkill() { }
+    //public virtual void RegistThisSkill() { }
 }

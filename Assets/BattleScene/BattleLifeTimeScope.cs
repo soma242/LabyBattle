@@ -1,3 +1,5 @@
+using UnityEngine;
+
 using MessagePipe;
 using VContainer;
 using VContainer.Unity;
@@ -9,22 +11,31 @@ using BattleSceneMessage;
 namespace BattleSceneMessage
 {
     public struct BattleStartMessage { }
+    public struct FormationPrepareMessage { }
     public struct BattlePrepareMessage { }
     public struct BattleFinishMessage { }
 
     public struct ActionSelectStartMessage
     {
-        /*
-
-        */
+        public sbyte charaForm;
+        public ActionSelectStartMessage(sbyte charaForm) 
+        {
+            this.charaForm = charaForm; 
+        }
     }
 
+    public struct ActionSelectCancelMessage { }
+
+    public struct ActionSelectBookMessage { }
+    public struct BookCompleteMessage { }
     public struct ActionSelectEndMessage { }
 
 
 
     public struct TurnStartMessage { }
     public struct TurnEndMessage { }
+
+    public struct EnemyActionSetMessage { }
 
     public struct CharaAgilitySetMessage { }
 
@@ -52,6 +63,26 @@ namespace BattleSceneMessage
     public struct EnterInput { }
     public struct CancelInput { }
 
+    public class ScrollInput
+    {
+        public Vector2 value;
+        //+‚È‚çtrue
+        public bool sign;
+        public ScrollInput(float value)
+        {
+            if(value < 0)
+            {
+                this.value = new Vector2(0, 55);
+                sign = true;
+            }
+            else
+            {
+                this.value = new Vector2(0, -55);
+                sign = false;
+            }
+        }
+    }
+
     public struct Holdout { }
 
     public struct DisposeSelect { }
@@ -66,7 +97,7 @@ namespace BattleSceneMessage
 
     public struct InputLayer
     {
-        public InputLayerSO inputLayerSO { get; }
+        public InputLayerSO inputLayerSO;
 
         public InputLayer(InputLayerSO inputLayerSO)
         {
@@ -94,6 +125,42 @@ namespace BattleSceneMessage
         }
     }
 
+
+    public struct NewLogSizeMessage
+    {
+        public Vector2 move;
+
+        public NewLogSizeMessage(float height)
+        {
+            move = new Vector2(0, height);
+            //Debug.Log(move);
+        }
+    }
+
+    public class DisableLogMessage
+    {
+        public BattleLogComponent comp;
+        public float height;
+        public DisableLogMessage(BattleLogComponent comp, float height)
+        {
+            this.comp = comp;
+            this.height = height;
+        }
+    }
+
+    public class DamageNoticeMessage
+    {
+        public bool chara;
+        public sbyte target;
+        public int damage;
+
+        public DamageNoticeMessage(bool chara,sbyte target, int damage)
+        {
+            this.chara = chara;
+            this.target = target;
+            this.damage = damage;
+        }
+    }
 
 
 
@@ -132,6 +199,7 @@ public class BattleLifeTimeScope : LifetimeScope
         builder.RegisterMessageBroker<DownInput>(option);
         builder.RegisterMessageBroker<EnterInput>(option);
         builder.RegisterMessageBroker<CancelInput>(option);
+        builder.RegisterMessageBroker<ScrollInput>(option);
 
         builder.RegisterMessageBroker<Holdout>(option);
 
@@ -142,11 +210,15 @@ public class BattleLifeTimeScope : LifetimeScope
         builder.RegisterMessageBroker<InputLayerSO, DownInput>(option);
         builder.RegisterMessageBroker<InputLayerSO, EnterInput>(option);
         builder.RegisterMessageBroker<InputLayerSO, CancelInput>(option);
+        builder.RegisterMessageBroker<InputLayerSO, ScrollInput>(option);
 
 
         //builder.RegisterMessageBroker<InputLayerChange>(option);
 
-        //builder.RegisterMessageBroker<DisposeSelect>(option);
+        builder.RegisterMessageBroker<DisposeSelect>(option);
+        builder.RegisterMessageBroker<InputLayerSO, DisposeSelect>(option);
+
+
 
         //builder.RegisterMessageBroker<SelectChange>(option);
         //builder.RegisterMessageBroker<SelectMessage, SelectChange>(option);

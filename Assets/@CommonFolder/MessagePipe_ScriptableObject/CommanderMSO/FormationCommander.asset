@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07d5281c13a31bc42badd1f9f6134ef2, type: 3}
+  m_Name: FormationCommander
+  m_EditorClassIdentifier: 
+  formationCharaCatalog:
+  - {fileID: 11400000, guid: 5df9943305f74624eb06d5982a3e5f39, type: 2}
+  - {fileID: 11400000, guid: 696f04cbd6986c24e95e4eebb1f65ae5, type: 2}
+  - {fileID: 11400000, guid: e66e4fe542d5e5a45935fbbc89b08ad6, type: 2}
+  - {fileID: 11400000, guid: 150d64886369ed545868e092c999ee17, type: 2}
+  formationEnemyCatalog:
+  - {fileID: 11400000, guid: b1f41fdcf6ab3ce47bd3c65f0cc8c315, type: 2}
+  - {fileID: 11400000, guid: f78a19603b7b2f5438d49cd9395589ca, type: 2}
+  - {fileID: 11400000, guid: 7845a92a98bfbce41a00570278ac87c9, type: 2}

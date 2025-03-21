@@ -16,3 +16,4 @@ MonoBehaviour:
   description: "\u73FE\u5728\u306E\u8DDD\u96E2\u3092\u4FDD\u3064"
   registed: 0
   skillEffectSO: {fileID: 11400000, guid: 337291feb3dc871419daa0244956445c, type: 2}
+  skillTarget: {fileID: 11400000, guid: 732512a6400290746a413c021656ab4b, type: 2}

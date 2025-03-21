@@ -4,21 +4,30 @@ using UnityEngine;
 
 using MessagePipe;
 
-[CreateAssetMenu(menuName = "MessageableSO/Component/CharaData/normal")]
+using Cysharp.Threading.Tasks;
+using SkillStruct;
+
+#pragma warning disable CS4014 // disable warning
+
+
+[CreateAssetMenu(menuName = "MessageableSO/Component/CharaData/physical")]
 public class MSO_NormalCharaDataSO : MSO_CharacterDataSO
 {
 
+    private IAsyncPublisher<RegistCommonPhysicalSkill> registCommonMagicAPub;
 
-    //基底クラスにアップキャストで渡しているのでnewでは基底クラスの関数が呼び出される。
-    /*
-    public override int GetAttack()
+    public override void MessageStart()
     {
-        return 0;
+        base.MessageStart();
+        registCommonMagicAPub = GlobalMessagePipe.GetAsyncPublisher<RegistCommonPhysicalSkill>();
     }
-    */
 
+    public override async UniTask RegistMasterySkill(sbyte formNum)
+    {
+        await registCommonMagicAPub.PublishAsync(new RegistCommonPhysicalSkill(formNum));
+        base.RegistMasterySkill(formNum);
 
-    //このキャラクターデータの参照を指定のformationに送り付ける。
+    }
 
 
 }

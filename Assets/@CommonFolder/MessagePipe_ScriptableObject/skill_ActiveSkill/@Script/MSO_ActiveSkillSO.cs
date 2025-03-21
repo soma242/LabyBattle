@@ -4,6 +4,8 @@ using UnityEngine;
 
 using SkillStruct;
 
+using MessagePipe;
+
 //ActiveSkill‚ğ‘‚â‚µ‚½
 //ActiveSkill‚ÌSO‚ğì¬
 //  Injecter‚É’Ç‰Á
@@ -14,10 +16,16 @@ using SkillStruct;
 
 
 
-public class MSO_ActiveSkillSO : MessageableScriptableObject
+public class MSO_ActiveSkillSO : ScriptableObject
 {
-    public ActiveSkillEnumSO activeKey;
-    public MSO_ActiveSkillTargetSO skillTarget;
+    public int activeKey;
 
     public virtual void ActiveSkillBoot(ActiveSkillPosition acitvePos) { }
+
+    public int GetSkillEffectKey()
+    {
+        return activeKey;
+    }
+
+
 }

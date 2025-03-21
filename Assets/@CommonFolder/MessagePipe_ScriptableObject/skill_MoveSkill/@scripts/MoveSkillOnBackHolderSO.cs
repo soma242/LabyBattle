@@ -5,21 +5,20 @@ using UnityEngine;
 using MessagePipe;
 using SkillStruct;
 
-[CreateAssetMenu(menuName = "skillHolder/moveOnBack")]
+[CreateAssetMenu(menuName = "MessageableSO/Component/skillHolder/moveOnBack")]
 public class MoveSkillOnBackHolderSO : MSO_SkillHolderSO
 {
-    [SerializeField]
-    private MSO_MoveBackSkillSO skillEffectSO;
+    //[SerializeField]
+    public MSO_MoveBackSkillSO skillEffectSO;
+    public MSO_MoveSkillTargetSO skillTarget;
 
-    private IPublisher<sbyte, RegistMoveSkillOnBack> registPub;
 
-    public override void MessageStart()
-    {
-        base.MessageStart();
-        registPub = GlobalMessagePipe.GetPublisher<sbyte, RegistMoveSkillOnBack>();
-    }
+    //private IPublisher<sbyte, RegistMoveSkillOnBack> registPub;
+
+
     public override void RegistThisSkill(sbyte formNum)
     {
+        var registPub = GlobalMessagePipe.GetPublisher<sbyte, RegistMoveSkillOnBack>();
         if (registed)
             return;
         registed = true;
@@ -28,5 +27,10 @@ public class MoveSkillOnBackHolderSO : MSO_SkillHolderSO
             registed = false;
         });
         registPub.Publish(formNum, new RegistMoveSkillOnBack(this));
+    }
+
+    public virtual int GetSkillKey()
+    {
+        return skillEffectSO.moveKey;
     }
 }

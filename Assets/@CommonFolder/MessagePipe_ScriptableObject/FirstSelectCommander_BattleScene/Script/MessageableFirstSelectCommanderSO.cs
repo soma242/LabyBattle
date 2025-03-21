@@ -19,7 +19,7 @@ public class MessageableFirstSelectCommanderSO : MessageableScriptableObject
 
     //InputLayerïœçXéÛÇØéÊÇËópMessagePipe
     [SerializeField] private InputLayerSO inputLayerSO;
-    private ISubscriber<InputLayer, InputLayerChanged> inputLayerChangeSubscriber;
+    private ISubscriber<InputLayerSO, InputLayerChanged> inputLayerChangeSubscriber;
     private System.IDisposable disposable;
 
     
@@ -33,14 +33,13 @@ public class MessageableFirstSelectCommanderSO : MessageableScriptableObject
         firstSelectPublisher = GlobalMessagePipe.GetPublisher<SelectMessage, SelectChange>();
 
         //subscribe
-        inputLayerChangeSubscriber = GlobalMessagePipe.GetSubscriber<InputLayer, InputLayerChanged>();
+        inputLayerChangeSubscriber = GlobalMessagePipe.GetSubscriber<InputLayerSO, InputLayerChanged>();
 
         var bag = DisposableBag.CreateBuilder();
 
-        inputLayerChangeSubscriber.Subscribe(new InputLayer(inputLayerSO), i =>
+        inputLayerChangeSubscriber.Subscribe(inputLayerSO, i =>
         {
-            //Debug.Log("test is OK");
-            FirstSelect();
+            firstSelectPublisher.Publish(new SelectMessage(inputLayerSO, firstNumber), new SelectChange());
         }).AddTo(bag);
 
         disposable = bag.Build();
@@ -65,8 +64,5 @@ public class MessageableFirstSelectCommanderSO : MessageableScriptableObject
     }
     */
 
-    private void FirstSelect()
-    {
-        firstSelectPublisher.Publish(new SelectMessage(inputLayerSO, firstNumber), new SelectChange());
-    }
+
 }

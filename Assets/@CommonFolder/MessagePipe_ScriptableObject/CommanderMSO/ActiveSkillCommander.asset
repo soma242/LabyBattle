@@ -15,3 +15,5 @@ MonoBehaviour:
   activeCatalog:
   - {fileID: 11400000, guid: 05f8faf26bcf6604eb0717371d5483f1, type: 2}
   - {fileID: 11400000, guid: 473a05dfd25109c42b7848cdd340443f, type: 2}
+  - {fileID: 11400000, guid: 17a13104029c38e44b3ca1cf6624129b, type: 2}
+  - {fileID: 11400000, guid: d607e136384447f46a257693381c2c0c, type: 2}

@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9814937f47f3bc242914832cbef3c7e1, type: 3}
+  m_Name: WaitOnFront
+  m_EditorClassIdentifier: 
+  moveKey: {fileID: 11400000, guid: 1ec9ed02c6ba6754fba1bccfbb8fed35, type: 2}
+  skillTarget: {fileID: 11400000, guid: 732512a6400290746a413c021656ab4b, type: 2}

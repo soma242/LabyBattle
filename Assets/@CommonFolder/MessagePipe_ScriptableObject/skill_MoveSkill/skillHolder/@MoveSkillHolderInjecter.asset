@@ -15,5 +15,6 @@ MonoBehaviour:
   messageableSOList:
   - {fileID: 11400000, guid: b77378526016148449ae5ac5000d9bbb, type: 2}
   - {fileID: 11400000, guid: 8f54f127ce74a124bb847727b867c520, type: 2}
+  - {fileID: 11400000, guid: 93009cbebd87bf84eb75f6d800ed0d5f, type: 2}
   - {fileID: 11400000, guid: 8a38f69b4ca8bd04ebbfe5a755974cd4, type: 2}
   - {fileID: 11400000, guid: daf388809d075564f96280c96a58fc79, type: 2}

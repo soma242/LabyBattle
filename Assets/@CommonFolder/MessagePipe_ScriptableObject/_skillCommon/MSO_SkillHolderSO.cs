@@ -10,9 +10,10 @@ public class MSO_SkillHolderSO : MessageableScriptableObject
     [SerializeField]
     protected string skillName;
     [SerializeField]
+    [TextArea]
     protected string description;
 
-    public bool registed = false;
+    protected bool registed = false;
 
     protected ISubscriber<RegistSkillFinish> registFinishSub;
 

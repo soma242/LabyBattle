@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd169400aef7cb740b2445bb2378d6b4, type: 3}
+  m_Name: Hero'sUnique1
+  m_EditorClassIdentifier: 
+  skillName: "\u56FA\u6709passive1"
+  description: "\u6575\u306E\u653B\u6483\u5BFE\u8C61\u3092\u81EA\u5206\u306B\u5909\u66F4\u3059\u308B\u3053\u3068\u306B\u6210\u529F\u3057\u305F\u6642\uFF0C\u76F8\u624B\u306E\u59FF\u52E2\u3092\u5D29\u3057\u30661\u30BF\u30FC\u30F3\u306E\u9593(\u53D7\u3051\u308B\u30C0\u30E1\u30FC\u30B8\u306E\u5897\u52A0\uFF0C\u653B\u6483\u529B\u3092\u4E0B\u3052\u308B)"
+  skillEffectSO: {fileID: 11400000, guid: 7855a5606a3f10245b4f66707b4f4019, type: 2}

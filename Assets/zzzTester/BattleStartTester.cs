@@ -29,7 +29,12 @@ public class BattleStartTester : MonoBehaviour
         //turnEndPub.Publish(new TurnEndMessage());
 
         registAPub = GlobalMessagePipe.GetAsyncPublisher<sbyte, RegistSkillStart>();
-        registAPub.Publish(1, new RegistSkillStart());
+
+        for(sbyte i = FormationScope.FirstChara(); i<= FormationScope.LastChara(); i++)
+        {
+            registAPub.Publish(i, new RegistSkillStart());
+
+        }
     }
 
 

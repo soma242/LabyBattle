@@ -12,7 +12,7 @@ public class MessageTester : MonoBehaviour
 
     [SerializeField] private MSO_ActiveSkillSO skill;
     [SerializeField] private MSO_FormationCharaSO fromSO;
-    private sbyte to = 50;
+    //private sbyte to = 50;
 
     void Awake()
     {
@@ -24,6 +24,6 @@ public class MessageTester : MonoBehaviour
     void Start()
     {
         //Debug.Log("pub");
-        commandPub.Publish(new ActiveSkillCommand(skill.activeKey.activeNum, new ActiveSkillPosition(fromSO, to)));
+        //commandPub.Publish(new ActiveSkillCommand(skill.activeKey.activeNum, new ActiveSkillPosition(fromSO, to)));
     }
 }
