@@ -20,6 +20,8 @@ public class BattleLogController : MonoBehaviour
     [SerializeField]
     private GameObject battleLog;
 
+
+
     [SerializeField]
     private MSO_FormationCommander formCommander;
 
@@ -30,7 +32,9 @@ public class BattleLogController : MonoBehaviour
     private Image image;
 
     [SerializeField]
-    private InputLayerSO layerSO;
+    private InputLayerSO battleOptionLayer;
+    [SerializeField]
+    private InputLayerSO battleLogLayer;
 
     private BattleLogComponent logComp;
 
@@ -40,11 +44,14 @@ public class BattleLogController : MonoBehaviour
 
     private ISubscriber<DisableLogMessage> disableLogSub;
 
-    private IAsyncSubscriber<ActionSelectEndMessage> selectEndASub;
+    //private IAsyncSubscriber<ActionSelectEndMessage> selectEndASub;
 
     [Inject] private readonly ISubscriber<InputLayerSO, ScrollInput> scrollSub;
 
     private ISubscriber<NewLogSizeMessage> sizeSub;
+
+
+    private ISubscriber<InputLayerSO, InputLayerChanged> layerChangeSub;
 
 
 
@@ -54,7 +61,8 @@ public class BattleLogController : MonoBehaviour
     private System.IDisposable disposableCanvas;
 
 
-    Utf16PreparedFormat<string, int> prepared = ZString.PrepareUtf16<string, int>("{0}に{1}のダメージ");
+    Utf16PreparedFormat<string, int> damageLog = ZString.PrepareUtf16<string, int>("{0}に{1}のダメージ");
+    Utf16PreparedFormat<string> knockOutLog = ZString.PrepareUtf16<string>("{0}が倒れた");
 
     void Awake()
     {
@@ -62,10 +70,12 @@ public class BattleLogController : MonoBehaviour
 
         disableLogSub = GlobalMessagePipe.GetSubscriber<DisableLogMessage>();
 
-        selectEndASub = GlobalMessagePipe.GetAsyncSubscriber<ActionSelectEndMessage>();
+        //selectEndASub = GlobalMessagePipe.GetAsyncSubscriber<ActionSelectEndMessage>();
 
         sizeSub = GlobalMessagePipe.GetSubscriber<NewLogSizeMessage>();
 
+
+        layerChangeSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, InputLayerChanged>();
 
         image = GetComponent<Image>();
 
@@ -76,6 +86,7 @@ public class BattleLogController : MonoBehaviour
 
         height = 480f;
 
+        //次のログに使いまわすコンポーネントを受け取る
         disableLogSub.Subscribe(get =>
         {
             logComp = get.comp;
@@ -83,6 +94,7 @@ public class BattleLogController : MonoBehaviour
 
         }).AddTo(bag);
 
+        //生成から使いまわしにスイッチ
         disposableSwitch = disableLogSub.Subscribe(get =>
         {
             disposableSwitch?.Dispose();
@@ -97,10 +109,10 @@ public class BattleLogController : MonoBehaviour
             //Debug.Log(height);
         }).AddTo(bag);
 
-        selectEndASub.Subscribe(async (get, ct) =>
+        layerChangeSub.Subscribe(battleLogLayer, get =>
         {
             canvas.enabled = true;
-            disposableCanvas = scrollSub.Subscribe(layerSO, get =>
+            disposableCanvas = scrollSub.Subscribe(battleLogLayer, get =>
             {
                 //Debug.Log(this.name);
                 if(get.sign && image.rectTransform.anchoredPosition.y >= 0)
@@ -117,6 +129,13 @@ public class BattleLogController : MonoBehaviour
             });
         }).AddTo(bag);
 
+        layerChangeSub.Subscribe(battleOptionLayer, get =>
+        {
+            disposableCanvas?.Dispose();
+            canvas.enabled = false;
+        }).AddTo(bag);
+
+
         disposable = bag.Build();
     }
 
@@ -128,6 +147,8 @@ public class BattleLogController : MonoBehaviour
         disposableCanvas?.Dispose();
     }
 
+
+    //ログの受信を以下の二つの関数で行う
     private void SetCreateLogSub()
     {
         var bag = DisposableBag.CreateBuilder();
@@ -144,16 +165,41 @@ public class BattleLogController : MonoBehaviour
             comp.SetReference();
             if (get.chara)
             {
-                comp.InstantiateThisComp(prepared.Format(GetCharaName(get.target), get.damage));
+                comp.InstantiateThisComp(damageLog.Format(GetCharaName(get.target), get.damage));
 
             }
             else
             {
-                comp.InstantiateThisComp(prepared.Format(GetEnemyName(get.target), get.damage));
+                comp.InstantiateThisComp(damageLog.Format(GetEnemyName(get.target), get.damage));
             }
-            //text.SetText(prepared.Format(get.name, get.damage));
+            //text.SetText(damageLog.Format(get.name, get.damage));
 
         }).AddTo(bag);
+
+        var dropEnemySub = GlobalMessagePipe.GetSubscriber<DropEnemyMessage>();
+        dropEnemySub.Subscribe(get =>
+        {
+            var obj = Instantiate(battleLog, transform, false);
+            //obj.transform.SetParent(transform);
+
+            //var text = obj.GetComponent<TMP_Text>();
+            var comp = obj.GetComponent<BattleLogComponent>();
+            comp.SetReference();
+            comp.InstantiateThisComp(knockOutLog.Format(GetEnemyName(get.pos)));
+        }).AddTo(bag);
+
+        var dropCharaSub = GlobalMessagePipe.GetSubscriber<DropCharaMessage>();
+        dropCharaSub.Subscribe(get =>
+        {
+            var obj = Instantiate(battleLog, transform, false);
+            //obj.transform.SetParent(transform);
+
+            //var text = obj.GetComponent<TMP_Text>();
+            var comp = obj.GetComponent<BattleLogComponent>();
+            comp.SetReference();
+            comp.InstantiateThisComp(knockOutLog.Format(GetCharaName(get.pos)));
+        }).AddTo(bag);
+
 
         disposableNewLog = bag.Build();
     }
@@ -168,18 +214,18 @@ public class BattleLogController : MonoBehaviour
 
             if (get.chara)
             {
-                logComp.InstantiateThisComp(prepared.Format(GetCharaName(get.target), get.damage));
+                logComp.InstantiateThisComp(damageLog.Format(GetCharaName(get.target), get.damage));
 
             }
             else
             {
-                logComp.InstantiateThisComp(prepared.Format(GetEnemyName(get.target), get.damage));
+                logComp.InstantiateThisComp(damageLog.Format(GetEnemyName(get.target), get.damage));
 
             }
 
 
             //Debug.Log("enable");
-            //text.SetText(prepared.Format(get.name, get.damage));
+            //text.SetText(damageLog.Format(get.name, get.damage));
 
         }).AddTo(bag);
 

@@ -302,7 +302,8 @@ public class MSO_FormationCharaSO : MSO_FormationBaseMSO, IGetFormationInfo
     //バトル中に参加している場合のSub達
     private async UniTask PrepareBattleSub(CancellationToken thisCt)
     {
-
+        disposableOnExclusion?.Dispose();
+        disposableMove?.Dispose();
         
 
         var bag = DisposableBag.CreateBuilder();
@@ -444,29 +445,15 @@ public class MSO_FormationCharaSO : MSO_FormationBaseMSO, IGetFormationInfo
 
 
         //ダメージの威力受け入れ
-        normalDamageSub.Subscribe(GetFormNum(), get =>
+        ActionSkillSubPrepare(GetFormNum(), bag);
+
+
+        var checkGetSub = GlobalMessagePipe.GetSubscriber<KnockOutChara>();
+        checkGetSub.Subscribe(get =>
         {
-            //Debug.Log("damage");
-            if (get.OnMagic)
-            {
-                int damage = NormalPDamage(get.damage);
-                currentHP -= damage;
-                damageNoticePub.Publish(new DamageNoticeMessage(true, get.activePos.target, damage));
-
-            }
-            else
-            {
-                int damage = NormalMDamage(get.damage);
-                currentHP -= damage;
-                damageNoticePub.Publish(new DamageNoticeMessage(true, GetFormNum(), damage));
-
-
-            }
-            if(currentHP < 0)
-            {
-                participant = false;
-                PrepareWatchingSub();
-            }
+            var checkReturnPub = GlobalMessagePipe.GetPublisher<KnockOutChecker>();
+            checkReturnPub.Publish(new KnockOutChecker(GetFormNum()));
+           // Debug.Log("checked");
         }).AddTo(bag);
 
         disposableOnExclusion = bag.Build();
@@ -475,6 +462,9 @@ public class MSO_FormationCharaSO : MSO_FormationBaseMSO, IGetFormationInfo
 
     private void PrepareWatchingSub()
     {
+        disposableOnExclusion?.Dispose();
+        disposableMove?.Dispose();
+
         var bag = DisposableBag.CreateBuilder();
         nextTargetSub.Subscribe(GetFormNum(), get =>
         {
@@ -515,31 +505,8 @@ public class MSO_FormationCharaSO : MSO_FormationBaseMSO, IGetFormationInfo
             posChangePub.Publish(new MovePositionChangeMessage(currentPos, GetFormNum()));
         }).AddTo(bag);
 
-        //damage受け入れ
-        normalDamageSub.Subscribe(FormationScope.FrontChara(), get =>
-        {
-            //Debug.Log("damage");
-            if (get.OnMagic)
-            {
-                int damage = NormalPDamage(get.damage);
-                currentHP -= damage;
-                damageNoticePub.Publish(new DamageNoticeMessage(true, get.activePos.target, damage));
 
-            }
-            else
-            {
-                int damage = NormalMDamage(get.damage);
-                currentHP -= damage;
-                damageNoticePub.Publish(new DamageNoticeMessage(true, GetFormNum(), damage));
-
-
-            }
-            if (currentHP < 0)
-            {
-                participant = false;
-                PrepareWatchingSub();
-            }
-        }).AddTo(bag);
+        ActionSkillSubPrepare(FormationScope.FrontChara(), bag);
 
 
         disposableMove = bag.Build();
@@ -562,30 +529,8 @@ public class MSO_FormationCharaSO : MSO_FormationBaseMSO, IGetFormationInfo
             posChangePub.Publish(new MovePositionChangeMessage(currentPos, GetFormNum()));
         }).AddTo(bag);
 
-        normalDamageSub.Subscribe(FormationScope.BackChara(), get =>
-        {
-            //Debug.Log("damage");
-            if (get.OnMagic)
-            {
-                int damage = NormalPDamage(get.damage);
-                currentHP -= damage;
-                damageNoticePub.Publish(new DamageNoticeMessage(true, get.activePos.target, damage));
 
-            }
-            else
-            {
-                int damage = NormalMDamage(get.damage);
-                currentHP -= damage;
-                damageNoticePub.Publish(new DamageNoticeMessage(true, GetFormNum(), damage));
-
-
-            }
-            if (currentHP < 0)
-            {
-                participant = false;
-                PrepareWatchingSub();
-            }
-        }).AddTo(bag);
+        ActionSkillSubPrepare(FormationScope.BackChara(), bag);
 
 
         disposableMove = bag.Build();
@@ -604,6 +549,28 @@ public class MSO_FormationCharaSO : MSO_FormationBaseMSO, IGetFormationInfo
         return Mathf.FloorToInt(actualDamage);
     }
 
+
+    public void ActionSkillSubPrepare(sbyte form, DisposableBagBuilder bag)
+    {
+        normalDamageSub.Subscribe(form, get =>
+        {
+            int damage = NormalPDamage(get.damage);
+            currentHP -= damage;
+            damageNoticePub.Publish(new DamageNoticeMessage(true, GetFormNum(), damage));
+
+
+            CheckContinuation();
+
+        }).AddTo(bag);
+        normalMagicDamageSub.Subscribe(form, get =>
+        {
+            int damage = NormalMDamage(get.damage);
+            currentHP -= damage;
+            damageNoticePub.Publish(new DamageNoticeMessage(true, GetFormNum(), damage));
+            CheckContinuation();
+
+        }).AddTo(bag);
+    }
 
 
 
@@ -662,5 +629,20 @@ public class MSO_FormationCharaSO : MSO_FormationBaseMSO, IGetFormationInfo
 
 
 
+    private void CheckContinuation()
+    {
+        if (currentHP < 0)
+        {
+            participant = false;
+            PrepareWatchingSub();
 
+
+            //これがなければ倒れたキャラもカウントされる
+            UniTask.NextFrame();
+
+            var dropCharaPub = GlobalMessagePipe.GetPublisher<DropCharaMessage>();
+            dropCharaPub.Publish(new DropCharaMessage(GetFormNum()));
+        }
+
+    }
 }

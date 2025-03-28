@@ -24,4 +24,4 @@ MonoBehaviour:
   defence: 0
   mDefence: 0
   agility: 7
-  targetRate: 50
+  targetRate: 5000

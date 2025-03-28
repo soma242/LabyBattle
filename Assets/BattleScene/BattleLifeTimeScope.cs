@@ -163,9 +163,38 @@ namespace BattleSceneMessage
     }
 
 
+    public struct KnockOutChecker
+    {
+        public sbyte pos;
+        public KnockOutChecker(sbyte pos)
+        {
+            this.pos = pos;
+        }
+    }
+    public struct KnockOutChara {    }
+    public struct KnockOutEnemy {    }
 
+    public struct AllEnemyDownMessage { }
+    public struct AllCharaDownMessage { }
 
+    public struct DropEnemyMessage
+    {
+        public sbyte pos;
 
+        public DropEnemyMessage(sbyte pos)
+        {
+            this.pos = pos;
+        }
+    }
+    public struct DropCharaMessage
+    {
+        public sbyte pos;
+
+        public DropCharaMessage(sbyte pos)
+        {
+            this.pos = pos;
+        }
+    }
 
 }
 

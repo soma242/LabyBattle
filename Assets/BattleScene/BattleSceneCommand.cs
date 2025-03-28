@@ -48,7 +48,7 @@ public class BattleSceneCommand : MonoBehaviour
     private CancellationTokenSource cts;
 
 
-
+    private bool battleContinue;
 
     private sbyte attention;
     private int standard;
@@ -66,6 +66,7 @@ public class BattleSceneCommand : MonoBehaviour
     private IAsyncPublisher<FormationPrepareMessage> formPreAPub;
     private IAsyncPublisher<BattlePrepareMessage> prepareAPub;
     private IPublisher<BattleFinishMessage> endPub;
+    private ISubscriber<BattleFinishMessage> endSub;
 
     private IAsyncPublisher<TurnStartMessage> turnStartAPub;
     private IAsyncPublisher<EnemyActionSetMessage> enemyActionSetAPub;
@@ -97,6 +98,7 @@ public class BattleSceneCommand : MonoBehaviour
 
         //まだ実装してない。
         endPub = GlobalMessagePipe.GetPublisher<BattleFinishMessage>();
+        endSub = GlobalMessagePipe.GetSubscriber<BattleFinishMessage>();
 
         turnStartAPub = GlobalMessagePipe.GetAsyncPublisher<TurnStartMessage>();
         enemyActionSetAPub = GlobalMessagePipe.GetAsyncPublisher<EnemyActionSetMessage>();
@@ -147,6 +149,27 @@ public class BattleSceneCommand : MonoBehaviour
             selectEndAPub.PublishAsync(new ActionSelectEndMessage());
         }).AddTo(bag);
 
+        var allDownCharaSub = GlobalMessagePipe.GetSubscriber<AllCharaDownMessage>();
+        var allDownEnemySub = GlobalMessagePipe.GetSubscriber<AllEnemyDownMessage>();
+
+        allDownCharaSub.Subscribe(get =>
+        {
+            endPub.Publish(new BattleFinishMessage());
+        }).AddTo(bag);
+        allDownEnemySub.Subscribe(get =>
+        {
+            endPub.Publish(new BattleFinishMessage());
+
+        }).AddTo(bag);
+
+        endSub.Subscribe(get =>
+        {
+            cts.Cancel();
+            disposable.Dispose();
+            Debug.Log("battleFinish");
+        }).AddTo(bag);
+
+
         disposable = bag.Build();
     }
 
@@ -166,56 +189,63 @@ public class BattleSceneCommand : MonoBehaviour
         var passiveStartPub = GlobalMessagePipe.GetPublisher<PassiveOnBattleStartMessage>();
         passiveStartPub.Publish(new PassiveOnBattleStartMessage());
 
+        battleContinue = true;
+
         //以降繰り返し処理。
-
-        //ターン開始
-        await turnStartAPub.PublishAsync(new TurnStartMessage());
-        //エネミーの行動決定
-        await enemyActionSetAPub.PublishAsync(new EnemyActionSetMessage(), AsyncPublishStrategy.Sequential);
-
-
-        //行動選択者の変更
-        selectStartPub.Publish(FormationScope.FirstChara(), new ActionSelectStartMessage(FormationScope.FirstChara()));
-
-        //何度も起動することは確かめた。
-        //Destory時のError: NullReferenceException: Object reference not set to an instance of an object
-        //GetAsyncSubし忘れ(注入してなかった)
-        var ev = await selectEndASub.FirstAsync(ct);
-
-        for(sbyte i = FormationScope.FirstChara(); i<=FormationScope.LastChara(); i++)
-        {
-            moveBootPub.Publish(i, new MoveSkillBootMessage());
-            //Debug.Log("move");
-            await UniTask.NextFrame();
-        }
-
         do
         {
-            await UniTask.Delay(TimeSpan.FromSeconds(0.2f), cancellationToken: cts.Token);
+            //ターン開始
+            await turnStartAPub.PublishAsync(new TurnStartMessage());
+            //エネミーの行動決定
+            await enemyActionSetAPub.PublishAsync(new EnemyActionSetMessage(), AsyncPublishStrategy.Sequential);
 
-            standard = 0;
-            attention = FormationScope.NoneChara();
-            var d = returnAgiSub.Subscribe(get =>
+
+            //行動選択者の変更
+            selectStartPub.Publish(FormationScope.FirstChara(), new ActionSelectStartMessage(FormationScope.FirstChara()));
+
+            //何度も起動することは確かめた。
+            //Destory時のError: NullReferenceException: Object reference not set to an instance of an object
+            //GetAsyncSubし忘れ(注入してなかった)
+            var ev = await selectEndASub.FirstAsync(ct);
+
+            //移動スキルを編成順に
+            for (sbyte i = FormationScope.FirstChara(); i <= FormationScope.LastChara(); i++)
             {
-                if(get.agility > standard)
+                moveBootPub.Publish(i, new MoveSkillBootMessage());
+                //Debug.Log("move");
+                await UniTask.NextFrame();
+            }
+
+            //Activeスキルを素早さ順に
+            do
+            {
+                await UniTask.Delay(TimeSpan.FromSeconds(0.2f), cancellationToken: cts.Token);
+
+                standard = 0;
+                attention = FormationScope.NoneChara();
+                var d = returnAgiSub.Subscribe(get =>
                 {
-                    attention = get.formNum;
-                    standard= get.agility;
-                }
-            });
-            await commonGetAgiAPub.PublishAsync(new GetCommonActionAgility());
-            d.Dispose();
+                    if (get.agility > standard)
+                    {
+                        attention = get.formNum;
+                        standard = get.agility;
+                    }
+                });
+                await commonGetAgiAPub.PublishAsync(new GetCommonActionAgility());
+                d.Dispose();
 
-            activeBootPub.Publish(attention, new ActiveSkillBootMessage());
+                activeBootPub.Publish(attention, new ActiveSkillBootMessage());
 
 
-        } while (attention != FormationScope.NoneChara());
+            } while (attention != FormationScope.NoneChara());
 
-        //Debug.Log(this.name);
-        
+            //Debug.Log(this.name);
 
-        //ターン終了
-        await turnEndAPub.PublishAsync(new TurnEndMessage());
+
+            //ターン終了
+            await turnEndAPub.PublishAsync(new TurnEndMessage());
+        } while (battleContinue);
+
     }
 
 

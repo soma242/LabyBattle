@@ -91,8 +91,9 @@ public class MessageablePrepareSO : ScriptableObject
         builder.AddMessageBroker<sbyte, TauntApproachMessage>();
 
 
-        //To_DamageCalc
+        //From_DamageCalc
         builder.AddMessageBroker<sbyte, NormalDamageCalcMessage>();
+        builder.AddMessageBroker<sbyte, NormalMagicDamageCalcMessage>();
 
         //To_MoveSKillCommander
         builder.AddMessageBroker<MoveSkillCommand>();
@@ -221,6 +222,16 @@ public class MessageablePrepareSO : ScriptableObject
         builder.AddMessageBroker<BattleSceneMessage.TurnStartMessage>();
 
         builder.AddMessageBroker<BattleSceneMessage.EnemyActionSetMessage>();
+
+        builder.AddMessageBroker<BattleSceneMessage.DropEnemyMessage>();
+        builder.AddMessageBroker<BattleSceneMessage.DropCharaMessage>();
+
+        builder.AddMessageBroker<BattleSceneMessage.KnockOutEnemy>();
+        builder.AddMessageBroker<BattleSceneMessage.KnockOutChara>();
+        builder.AddMessageBroker<BattleSceneMessage.KnockOutChecker>();
+
+        builder.AddMessageBroker<BattleSceneMessage.AllEnemyDownMessage>();
+        builder.AddMessageBroker<BattleSceneMessage.AllCharaDownMessage>();
 
         //From_BattleSceneCommand, FormationChara,
         //To_FormationChara, ActionSelectSimulator

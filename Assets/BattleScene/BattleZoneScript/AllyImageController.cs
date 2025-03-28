@@ -203,6 +203,12 @@ public class AllyImageController : MonoBehaviour
 
         }).AddTo(bag);
 
+        var dropCharaSub = GlobalMessagePipe.GetSubscriber<DropCharaMessage>();
+
+        dropCharaSub.Subscribe(get =>
+        {
+            allyCatalog[FormationScope.FormToListChara(get.pos)].DisableCanvas();
+        }).AddTo(bag);
 
         disposableOnDestroy = bag.Build();
     }

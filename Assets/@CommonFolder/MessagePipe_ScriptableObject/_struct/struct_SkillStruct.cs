@@ -207,13 +207,22 @@ namespace SkillStruct
     //DamageCalcからのメッセージ
     public class NormalDamageCalcMessage
     {
-        public bool OnMagic;
         public float damage;
         public ActiveSkillPosition activePos;
 
-        public NormalDamageCalcMessage(bool OnMagic, float damage, ActiveSkillPosition activePos)
+        public NormalDamageCalcMessage(float damage, ActiveSkillPosition activePos)
         {
-            this.OnMagic = OnMagic;
+            this.damage = damage;
+            this.activePos = activePos;
+        }
+    }
+    public class NormalMagicDamageCalcMessage
+    {
+        public float damage;
+        public ActiveSkillPosition activePos;
+
+        public NormalMagicDamageCalcMessage(float damage, ActiveSkillPosition activePos)
+        {
             this.damage = damage;
             this.activePos = activePos;
         }

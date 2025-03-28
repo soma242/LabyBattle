@@ -17,6 +17,8 @@ public class ZoneCanvasController : MonoBehaviour
 
     [SerializeField]
     private InputLayerSO battleLogLayer;
+    [SerializeField]
+    private InputLayerSO battleOptionLayer;
 
     private ISubscriber<InputLayerSO, InputLayerChanged> layerChangedSub;
 
@@ -42,6 +44,11 @@ public class ZoneCanvasController : MonoBehaviour
         layerChangedSub.Subscribe(battleLogLayer, get =>
         {
             canvas.enabled = false;
+        }).AddTo(bag);
+
+        layerChangedSub.Subscribe(battleOptionLayer, get =>
+        {
+            canvas.enabled = true; 
         }).AddTo(bag);
 
         disposable = bag.Build();

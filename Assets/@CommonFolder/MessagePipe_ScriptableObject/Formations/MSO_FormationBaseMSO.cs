@@ -16,12 +16,14 @@ public class MSO_FormationBaseMSO : MessageableScriptableObject
 
     //commonMessage
     protected ISubscriber<sbyte, NormalDamageCalcMessage> normalDamageSub;
+    protected ISubscriber<sbyte, NormalMagicDamageCalcMessage> normalMagicDamageSub;
     protected IPublisher<DamageNoticeMessage> damageNoticePub;
 
 
     protected void CommonSubRegist()
     {
         normalDamageSub = GlobalMessagePipe.GetSubscriber<sbyte, NormalDamageCalcMessage>();
+        normalMagicDamageSub = GlobalMessagePipe.GetSubscriber<sbyte, NormalMagicDamageCalcMessage>();
         damageNoticePub = GlobalMessagePipe.GetPublisher<DamageNoticeMessage>();
 
     }

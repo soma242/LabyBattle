@@ -26,9 +26,16 @@ public class EnemyActionSimulateComp
     public TMP_Text targetText;
     public TMP_Text changeTargetText;
     public Canvas changeTargetCanvas;
+    public Canvas allCanvas;
 
     public Image hpCircle;
 
+
+    public void ResetSimulater()
+    {
+
+        allCanvas.enabled = false;
+    }
 }
 
 public class EnemyActionSimulator : MonoBehaviour
@@ -44,7 +51,6 @@ public class EnemyActionSimulator : MonoBehaviour
     //private sbyte tauntUserNum;
 
     private sbyte simulatedNum;
-
 
 
     private ISubscriber<SelectCharaNameMessage> selectorNameSub;
@@ -70,6 +76,7 @@ public class EnemyActionSimulator : MonoBehaviour
 
     void Awake()
     {
+
         selectorNameSub = GlobalMessagePipe.GetSubscriber<SelectCharaNameMessage>();
 
         approachSimuSub = GlobalMessagePipe.GetSubscriber<sbyte, TauntApproachSimulate>();
@@ -85,6 +92,7 @@ public class EnemyActionSimulator : MonoBehaviour
 
         damageSub = GlobalMessagePipe.GetSubscriber<DamageNoticeMessage>();
 
+        var dropEnemySub = GlobalMessagePipe.GetSubscriber<DropEnemyMessage>();
 
         var bag = DisposableBag.CreateBuilder();
 
@@ -98,11 +106,13 @@ public class EnemyActionSimulator : MonoBehaviour
                 //Debug.Log("listNum"+FormationScope.FormToListEnemy(formNum));
                 if (!formCommander.GetEnemyParticipant(listNum))
                 {
+                    comp.allCanvas.enabled = false;
                     listNum++;
                     formNum++;
                     continue;
                 }
 
+                comp.allCanvas.enabled = true ;
                 comp.nameText.SetText(formCommander.GetEnemyName(listNum));
                 comp.changeTargetCanvas.enabled = false;
 
@@ -112,6 +122,13 @@ public class EnemyActionSimulator : MonoBehaviour
                 listNum++;
                 formNum++;
             }
+        }).AddTo(bag);
+
+
+        dropEnemySub.Subscribe(get =>
+        {
+            int listNum = FormationScope.FormToListEnemy(get.pos);
+            simulateComp[listNum].allCanvas.enabled = false;
         }).AddTo(bag);
 
         selectorNameSub.Subscribe(get =>

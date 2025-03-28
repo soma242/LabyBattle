@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: _2_second
   m_EditorClassIdentifier: 
   formNumSO: {fileID: 11400000, guid: 45a145bc035691c418c0ad8ed83d6f6e, type: 2}
-  participant: 1
+  participant: 0
   setChara: {fileID: 11400000, guid: a07ea652b75303740ad868131af4a5e0, type: 2}
   skillListHolderSO: {fileID: 11400000, guid: edd174d18b927574d8205d33eaeb6cf7, type: 2}
-  firstPos: 1
+  currentPos: 0
+  firstPos: 0

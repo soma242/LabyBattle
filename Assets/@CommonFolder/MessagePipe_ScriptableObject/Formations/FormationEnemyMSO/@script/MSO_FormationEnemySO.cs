@@ -71,7 +71,6 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
     private System.IDisposable disposableActiveAttention;
 
 
-    private IAsyncSubscriber<TurnStartMessage> turnStartASub;
 
 
 
@@ -120,7 +119,7 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
         activeBootSub = GlobalMessagePipe.GetSubscriber<sbyte, ActiveSkillBootMessage>();
         activeCommandPub = GlobalMessagePipe.GetPublisher<ActiveSkillCommand>();
 
-    turnStartASub = GlobalMessagePipe.GetAsyncSubscriber<TurnStartMessage>();
+
 
         tauntApproachSub = GlobalMessagePipe.GetSubscriber<sbyte, TauntApproachMessage>();
         tauntSuccessPub = GlobalMessagePipe.GetPublisher<sbyte, TauntSuccessMessage>();
@@ -145,7 +144,7 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
             else
             {
                 participant = false;
-                await PrepareWatchingSub();
+                PrepareWatchingSub();
             }
         }).AddTo(bag);
 
@@ -166,6 +165,11 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
 
     private async UniTask PrepareBattleSub(CancellationToken thisCt)
     {
+        disposableOnExclusion?.Dispose();
+        disposableTaunt?.Dispose();
+        disposableTarget?.Dispose();
+        disposableTiming?.Dispose();
+
         var bag = DisposableBag.CreateBuilder();
 
         prepareASub.Subscribe(async(get,ct) =>
@@ -236,11 +240,11 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
 
                 targetRate = 0;
 
-                Debug.Log(GetFormNum());
+                //Debug.Log(GetFormNum());
 
                 var d = targetReturnSub.Subscribe(get =>
                 {
-                    Debug.Log(get.targetForm + ":" + get.targetRate);
+                    //Debug.Log(get.targetForm + ":" + get.targetRate);
 
                     if (targetRate > get.targetRate)
                     {
@@ -288,7 +292,7 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
 
                 activeBootSub.Subscribe(GetFormNum(), get =>
                 {
-                    Debug.Log(name);
+                    //Debug.Log(name);
                     //Debug.Log(skillNum);
                     activeCommandPub.Publish(new ActiveSkillCommand(enemy.GetSettedSkillKey(skillNum), targetForm, this));
                     disposableActiveAttention?.Dispose();
@@ -313,14 +317,27 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
         NormalDamageSubPrepare(GetFormNum(), bag);
         NormalDamageSubPrepare(FormationScope.AllEnemy(), bag);
 
+        var checkGetSub = GlobalMessagePipe.GetSubscriber<KnockOutEnemy>();
+        checkGetSub.Subscribe(get =>
+        {
+            var checkReturnPub = GlobalMessagePipe.GetPublisher<KnockOutChecker>();
+            checkReturnPub.Publish(new KnockOutChecker(GetFormNum()));
+        }).AddTo(bag);
+
+
 
         disposableOnExclusion = bag.Build();
 
     }
 
-    private async UniTask PrepareWatchingSub()
+    private void PrepareWatchingSub()
     {
         disposableOnExclusion?.Dispose();
+        disposableTaunt?.Dispose();
+        disposableTarget?.Dispose();
+        disposableTiming?.Dispose();
+
+
 
         var bag = DisposableBag.CreateBuilder();
         nextTargetSub.Subscribe(GetFormNum(), get =>
@@ -334,6 +351,22 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
             preTargetPub.Publish(PreForm(GetFormNum()),new GetPreTargetName());
         }).AddTo(bag);
 
+        //Damage
+        normalDamageSub.Subscribe(GetFormNum(), get =>
+        {
+            //Debug.Log(GetFormNum());
+            //Debug.Log("watch");
+            var normalDamagePub = GlobalMessagePipe.GetPublisher<sbyte, NormalDamageCalcMessage>();
+            normalDamagePub.Publish(SbyteHandler.NextForm(GetFormNum()), get);
+        }).AddTo(bag);
+        normalMagicDamageSub.Subscribe(GetFormNum(), get =>
+        {
+            //Debug.Log(GetFormNum());
+            //Debug.Log("watch");
+            var normalDamagePub = GlobalMessagePipe.GetPublisher<sbyte, NormalMagicDamageCalcMessage>();
+            normalDamagePub.Publish(SbyteHandler.NextForm(GetFormNum()), get);
+        }).AddTo(bag);
+
         disposableOnExclusion = bag.Build();
 
     }
@@ -342,27 +375,24 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
     {
         normalDamageSub.Subscribe(form, get =>
         {
-            Debug.Log("damage");
-            if (get.OnMagic)
-            {
-                int damage = NormalPDamage(get.damage);
-                currentHP -= damage;
-                damageNoticePub.Publish(new DamageNoticeMessage(false, get.activePos.target, damage));
+            //Debug.Log(GetFormNum());
+            //Debug.Log("participant");
 
-            }
-            else
-            {
-                int damage = NormalMDamage(get.damage);
-                currentHP -= damage;
-                damageNoticePub.Publish(new DamageNoticeMessage(false, GetFormNum(), damage));
+            int damage = NormalPDamage(get.damage);
+            currentHP -= damage;
+            damageNoticePub.Publish(new DamageNoticeMessage(false, get.activePos.target, damage));
 
 
-            }
-            if (currentHP < 0)
-            {
-                participant = false;
-                //PrepareWatchingSub();
-            }
+        }).AddTo(bag);
+        normalMagicDamageSub.Subscribe(form, get=>
+        {
+            //Debug.Log(GetFormNum());
+            //Debug.Log("participant");
+            int damage = NormalMDamage(get.damage);
+            currentHP -= damage;
+            damageNoticePub.Publish(new DamageNoticeMessage(false, GetFormNum(), damage));
+
+            CheckContinuation();
         }).AddTo(bag);
     }
 
@@ -423,5 +453,20 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
     //
 
 
+    //ダメージ時にHPが残っているかの判定を行う
+    private void CheckContinuation()
+    {
+        if (currentHP < 0)
+        {
+            participant = false;
+            PrepareWatchingSub();
+
+            UniTask.NextFrame();
+
+            var dropEnemyPub = GlobalMessagePipe.GetPublisher<DropEnemyMessage>();
+            dropEnemyPub.Publish(new DropEnemyMessage(GetFormNum()));
+        }
+
+    }
 
 }

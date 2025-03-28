@@ -30,6 +30,6 @@ public class MSO_AllFrontCharaTargetSO : MSO_ActiveSkillTargetSO
     {
         var enemyTargetPub =  GlobalMessagePipe.GetPublisher<EnemyTargetingAllFrontChara>();
         enemyTargetPub.Publish(new EnemyTargetingAllFrontChara());
-        Debug.Log(name);
+        //Debug.Log(name);
     }
 }

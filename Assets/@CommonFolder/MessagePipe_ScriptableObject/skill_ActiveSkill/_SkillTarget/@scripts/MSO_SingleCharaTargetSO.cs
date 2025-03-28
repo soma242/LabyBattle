@@ -22,6 +22,6 @@ public class MSO_SingleCharaTargetSO : MSO_ActiveSkillTargetSO
         var enemyTargetPub = GlobalMessagePipe.GetPublisher<EnemyTargetingSingleChara>();
         enemyTargetPub.Publish(new EnemyTargetingSingleChara());
 
-        Debug.Log(name);
+        //Debug.Log(name);
     }
 }

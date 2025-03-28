@@ -187,7 +187,7 @@ public class BreakePosture: BaseBoolFloatEffect
         var breakSub = GlobalMessagePipe.GetSubscriber<sbyte, BreakePostureMessage>();
         disposeValid = breakSub.Subscribe(formNum, info =>
         {
-            Debug.Log("break");
+            //Debug.Log("break");
             valid = true;
             remaining = 1;
             disposable = turnEndASub.Subscribe(async (info, ct) =>
@@ -200,7 +200,7 @@ public class BreakePosture: BaseBoolFloatEffect
 
     public float GetEffect()
     {
-        Debug.Log(valid);
+        //Debug.Log(valid);
         if (valid)
         {
             return 1.5f;

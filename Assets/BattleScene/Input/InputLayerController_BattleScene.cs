@@ -23,21 +23,29 @@ public class InputLayerController_BattleScene : MonoBehaviour
     private IAsyncSubscriber<ActionSelectEndMessage> selectEndASub;
 
     private IAsyncSubscriber<TurnStartMessage> turnStartASub;
+    //private IAsyncSubscriber<TurnEndMessage> turnEndASub;
 
     private System.IDisposable disposable;
+    private System.IDisposable disposableLog;
 
     [Inject]
     private readonly ISubscriber<InputLayerSO, CancelInput> cancelSub;
+    [Inject]
+    private readonly ISubscriber<InputLayerSO, ScrollInput> scrollSub;
+
 
     private IPublisher<ActionSelectCancelMessage> cancelSelectPub;
+
 
     void Awake()
     {
         layerPub = GlobalMessagePipe.GetPublisher<InputLayer>();
         selectEndASub = GlobalMessagePipe.GetAsyncSubscriber<ActionSelectEndMessage>();
         turnStartASub = GlobalMessagePipe.GetAsyncSubscriber<TurnStartMessage>();
+        //turnEndASub = GlobalMessagePipe.GetAsyncSubscriber<TurnEndMessage>();
 
         cancelSelectPub = GlobalMessagePipe.GetPublisher<ActionSelectCancelMessage>();
+        //scrollSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, ScrollInput>();
 
         var bag = DisposableBag.CreateBuilder();
 
@@ -52,9 +60,27 @@ public class InputLayerController_BattleScene : MonoBehaviour
             layerPub.Publish(new InputLayer(battleOptionLayer));
         }).AddTo(bag);
 
+        
+        //battleOption‚É‚¨‚¯‚éCancel
         cancelSub.Subscribe(battleOptionLayer, get =>
         {
             cancelSelectPub.Publish(new ActionSelectCancelMessage());
+        }).AddTo(bag);
+
+        scrollSub.Subscribe(battleOptionLayer, get =>
+        {
+            if (get.sign)
+            {
+                return;
+            }
+            layerPub.Publish(new InputLayer(battleLogLayer));
+            disposableLog = cancelSub.Subscribe(battleLogLayer, get =>
+            {
+                disposableLog?.Dispose();
+                layerPub.Publish(new InputLayer(battleOptionLayer));
+
+            });
+
         }).AddTo(bag);
 
         disposable = bag.Build();
@@ -64,5 +90,6 @@ public class InputLayerController_BattleScene : MonoBehaviour
     void OnDestroy()
     {
         disposable?.Dispose();
+        disposableLog?.Dispose();
     }
 }

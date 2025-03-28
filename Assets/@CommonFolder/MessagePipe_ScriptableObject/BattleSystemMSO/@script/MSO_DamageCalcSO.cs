@@ -16,6 +16,7 @@ public class MSO_DamageCalcSO : MessageableScriptableObject
     //Publisher
     //  NormalAttackÇÃéZèoÇµÇΩDamageÇí ím => ï“ê¨î‘çÜÇTKey
     private IPublisher<sbyte, NormalDamageCalcMessage> normalDamagePub;
+    private IPublisher<sbyte, NormalMagicDamageCalcMessage> normalMagicDamagePub;
 
     //Subscriber
     private ISubscriber<NormalAttack> normalAttackSub;
@@ -31,6 +32,7 @@ public class MSO_DamageCalcSO : MessageableScriptableObject
         //Normal
         //pub
         normalDamagePub = GlobalMessagePipe.GetPublisher<sbyte, NormalDamageCalcMessage>();
+        normalMagicDamagePub = GlobalMessagePipe.GetPublisher<sbyte, NormalMagicDamageCalcMessage>();
 
         //sub
         normalAttackSub = GlobalMessagePipe.GetSubscriber<NormalAttack>();
@@ -43,14 +45,14 @@ public class MSO_DamageCalcSO : MessageableScriptableObject
             float damage = NormalPhysicalFormula(i.activePos.userSO, i.activeRatio);
             //Debug.Log(damage);
 
-            normalDamagePub.Publish(i.activePos.target, new NormalDamageCalcMessage(false, damage, i.activePos));
+            normalDamagePub.Publish(i.activePos.target, new NormalDamageCalcMessage(damage, i.activePos));
         }).AddTo(bag);
 
         normalMagicSub.Subscribe(i =>
         {
             float damage = NormalMagicFormula(i.activePos.userSO, i.activeRatio);
             //Debug.Log(name);
-            normalDamagePub.Publish(i.activePos.target, new NormalDamageCalcMessage(true, damage, i.activePos));
+            normalMagicDamagePub.Publish(i.activePos.target, new NormalMagicDamageCalcMessage(damage, i.activePos));
         }).AddTo(bag);
     }
 
@@ -64,12 +66,12 @@ public class MSO_DamageCalcSO : MessageableScriptableObject
 
         float damageCalc = info.GetActualAttack() * activeRatio;
 
-        
+        /*
 #if UNITY_EDITOR
         Debug.Log("actualAttack: "+ info.GetActualAttack());
         Debug.Log("activeRatio: "+ activeRatio);
 #endif
-        
+      */  
 
 
         return damageCalc;
@@ -80,12 +82,12 @@ public class MSO_DamageCalcSO : MessageableScriptableObject
         //int damageCalc = Mathf.FloorToInt(info.GetActualMagic() * activeRatio);
         float damageCalc = info.GetActualMagic() * activeRatio;
 
-        
+        /*
 #if UNITY_EDITOR
         Debug.Log("actualMagic: "+ info.GetActualMagic());
         Debug.Log("activeRatio: "+ activeRatio);
 #endif
-        
+        */
 
 
         return damageCalc;

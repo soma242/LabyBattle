@@ -33,9 +33,9 @@ public class CurrentInputLayerOfBattleScene : MonoBehaviour
 
         //inputLayerの変更を受け取った時，受け取ったInputLayerのfirstSelectを選択するためにPublishを行う。
         inputLayerChangeSubscriber.Subscribe(i => {
-            Debug.Log("receive: InputLayerChange = " + i.inputLayerSO);
-            inputLayerChangedPublisher.Publish(i.inputLayerSO, new InputLayerChanged());
             inputLayerSO = i.inputLayerSO;
+            //Debug.Log("receive: InputLayerChange = " + i.inputLayerSO);
+            inputLayerChangedPublisher.Publish(i.inputLayerSO, new InputLayerChanged());
 
         }).AddTo(bag);
 
