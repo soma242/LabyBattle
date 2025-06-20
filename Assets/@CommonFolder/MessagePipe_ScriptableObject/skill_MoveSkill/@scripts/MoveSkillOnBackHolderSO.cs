@@ -16,16 +16,16 @@ public class MoveSkillOnBackHolderSO : MSO_SkillHolderSO
     //private IPublisher<sbyte, RegistMoveSkillOnBack> registPub;
 
 
-    public override void RegistThisSkill(sbyte formNum)
+    public override void RegistThisSkill(sbyte formNum, DisposableBagBuilder bag)
     {
         var registPub = GlobalMessagePipe.GetPublisher<sbyte, RegistMoveSkillOnBack>();
         if (registed)
             return;
         registed = true;
-        disposable = registFinishSub.Subscribe(get =>
+        registFinishSub.Subscribe(get =>
         {
             registed = false;
-        });
+        }).AddTo(bag);
         registPub.Publish(formNum, new RegistMoveSkillOnBack(this));
     }
 

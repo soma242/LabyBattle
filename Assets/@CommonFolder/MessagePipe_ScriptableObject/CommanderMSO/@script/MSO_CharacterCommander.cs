@@ -9,9 +9,10 @@ using MessagePipe;
 [CreateAssetMenu(menuName = "MessageableSO/Component/Commander/chara")]
 public class MSO_CharacterCommander : MessageableScriptableObject
 {
-    [SerializeField] private List<MSO_CharacterDataSO> charaCatalog = new List<MSO_CharacterDataSO>();
+    [SerializeField] private List<CharacterDataSO> charaCatalog = new List<CharacterDataSO>();
 
-    private ISubscriber<FormCharacterBootMessage> bootFormSub;
+    //private ISubscriber<FormCharacterBootMessage> bootFormSub;
+    private IPublisher<sbyte, FormCharacterMessage> formCharaPub;
     private System.IDisposable disposable;
 
 
@@ -21,19 +22,20 @@ public class MSO_CharacterCommander : MessageableScriptableObject
         SortEnum();
 #endif
 
-        bootFormSub = GlobalMessagePipe.GetSubscriber<FormCharacterBootMessage>();
+        var bootFormSub = GlobalMessagePipe.GetSubscriber<FormCharacterBootMessage>();
+
+        formCharaPub = GlobalMessagePipe.GetPublisher<sbyte, FormCharacterMessage>();
 
         disposable = bootFormSub.Subscribe(i =>
         {
-            FormCharacters(i);
+            //charaCatalog[i.charaNum].FormingChara(i.formNum);
+            formCharaPub.Publish(i.formNum, new FormCharacterMessage(charaCatalog[i.charaNum]));
+
         });
 
     }
 
-    private void FormCharacters(FormCharacterBootMessage numInfo)
-    {
-        charaCatalog[numInfo.charaNum].FormingChara(numInfo.formNum);
-    }
+
 
 #if UNITY_EDITOR
 
@@ -54,7 +56,7 @@ public class MSO_CharacterCommander : MessageableScriptableObject
 
             //MessageableScriptableObjectÇÃéÌóﬁÇ≤Ç∆Ç…ëŒâûÇµÇΩInjectListÇ©ÇÁçsÇ§ÅB
             //activeSkillSO.MessageDependencyInjection();
-            foreach (MSO_CharacterDataSO chara in charaCatalog)
+            foreach (CharacterDataSO chara in charaCatalog)
             {
                 chara.charaKey.charaNum = j;
                 j++;

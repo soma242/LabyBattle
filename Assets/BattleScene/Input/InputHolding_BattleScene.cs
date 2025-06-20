@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using MessagePipe;
-using VContainer;
-using VContainer.Unity;
+
 
 using System;
 using System.Threading;
@@ -19,22 +18,22 @@ public class InputHolding_BattleScene : MonoBehaviour
 {
 
     //Publisher(VContainer)
-    [Inject] private readonly IPublisher<InputLayerSO, RightInput> rightPub;
-    [Inject] private readonly IPublisher<InputLayerSO, LeftInput> leftPub;
-    [Inject] private readonly IPublisher<InputLayerSO, UpInput> upPub;
-    [Inject] private readonly IPublisher<InputLayerSO, DownInput> downPub;
+    private IPublisher<InputLayerSO, RightInput> rightPub;
+    private IPublisher<InputLayerSO, LeftInput> leftPub;
+    private IPublisher<InputLayerSO, UpInput> upPub;
+    private IPublisher<InputLayerSO, DownInput> downPub;
 
-    [Inject] private readonly IPublisher<InputLayerSO, EnterInput> enterPub;
+    private IPublisher<InputLayerSO, EnterInput> enterPub;
 
     //Subscriber(Vcontainer)
-    [Inject] private readonly ISubscriber<InputLayerSO, RightInput> rightSub;
-    [Inject] private readonly ISubscriber<InputLayerSO, LeftInput> leftSub;
-    [Inject] private readonly ISubscriber<InputLayerSO, UpInput> upSub;
-    [Inject] private readonly ISubscriber<InputLayerSO, DownInput> downSub;
+    private ISubscriber<InputLayerSO, RightInput> rightSub;
+    private ISubscriber<InputLayerSO, LeftInput> leftSub;
+    private ISubscriber<InputLayerSO, UpInput> upSub;
+    private ISubscriber<InputLayerSO, DownInput> downSub;
 
-    [Inject] private readonly ISubscriber<InputLayerSO, EnterInput> enterSub;
+    private ISubscriber<InputLayerSO, EnterInput> enterSub;
 
-    [Inject] private readonly ISubscriber<Holdout> holdoutSub;
+    private ISubscriber<Holdout> holdoutSub;
 
     private System.IDisposable disposable;
 
@@ -44,12 +43,30 @@ public class InputHolding_BattleScene : MonoBehaviour
 
     [SerializeField] private List<InputLayerSO> layerList = new List<InputLayerSO>();
 
-    private CurrentInputLayerOfBattleScene currentLayer;
+    [SerializeField]
+    private MSO_InputLayerHolder currentLayer;
     private InputLayerSO tempLayer;
 
     void Awake()
     {
-        currentLayer = GetComponent<CurrentInputLayerOfBattleScene>();
+        //Debug.Log(this.enabled);
+        //currentLayer = GetComponent<InputLayerHolder>();
+
+
+        rightPub = GlobalMessagePipe.GetPublisher<InputLayerSO, RightInput>();
+        leftPub = GlobalMessagePipe.GetPublisher<InputLayerSO, LeftInput>();
+        upPub = GlobalMessagePipe.GetPublisher<InputLayerSO, UpInput>();
+        downPub = GlobalMessagePipe.GetPublisher<InputLayerSO, DownInput>();
+        enterPub = GlobalMessagePipe.GetPublisher<InputLayerSO, EnterInput>();
+        
+        rightSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, RightInput>();
+        leftSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, LeftInput>();
+        upSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, UpInput>();
+        downSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, DownInput>();
+        enterSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, EnterInput>();
+
+
+        holdoutSub = GlobalMessagePipe.GetSubscriber<Holdout>();
 
         //cts = new CancellationTokenSource();
         //token = cts.Token;
@@ -58,7 +75,7 @@ public class InputHolding_BattleScene : MonoBehaviour
 
         holdoutSub.Subscribe(i =>
         {
-            cts.Cancel();
+            cts?.Cancel();
         }).AddTo(bag);
 
 
@@ -243,11 +260,11 @@ public class InputHolding_BattleScene : MonoBehaviour
 
     }
 
-    public void Destroy()
+    public void OnDestroy()
     {
-        cts.Cancel();
-        cts.Dispose();
-        disposable.Dispose();
+        cts?.Cancel();
+        cts?.Dispose();
+        disposable?.Dispose();
     }
 
 

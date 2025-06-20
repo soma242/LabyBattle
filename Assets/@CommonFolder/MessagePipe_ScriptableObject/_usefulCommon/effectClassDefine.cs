@@ -8,36 +8,93 @@ using BattleSceneMessage;
 
 #pragma warning disable CS4014 // disable warning
 #pragma warning disable CS1998// disable warning
- 
+
+
+//16byteを2=>1に，後々バフ解除などでMessageを増やすことを考えて実装
+public class EffectMessagePipeHolder
+{
+    public IAsyncSubscriber<BattleFinishMessage> endASub;
+    //public IAsyncSubscriber<BattlePrepareMessage> prepareASub;
+    public IAsyncSubscriber<BattleSceneMessage.TurnEndMessage> turnEndASub;
+
+    public EffectMessagePipeHolder()
+    {
+        endASub = GlobalMessagePipe.GetAsyncSubscriber<BattleFinishMessage>();
+        //prepareASub = GlobalMessagePipe.GetAsyncSubscriber<BattleSceneMessage.BattlePrepareMessage>();
+        turnEndASub = GlobalMessagePipe.GetAsyncSubscriber<BattleSceneMessage.TurnEndMessage>();
+
+    }
+
+}
+
+public enum BuffType
+{
+    attack,
+    magic,
+    def,
+    agi
+}
+
+public static class EffectsString
+{
+    public static string AttackString = "攻撃";
+}
+
 //クラスとして追加，ここ(Effects)に追加，コンストラクタに追加，対応する計算式に追加
 //実際に使用する効果の集まり
-public class Effects
+public class Effects 
 {
+    
+
     public AttackBuff attackBuff;
     public MagicBuff magicBuff;
     public DefBuff defBuff;
     public AgiBuff agiBuff;
 
     public BreakePosture breakePosture;
-    
-    public Effects(sbyte formNum)
+
+
+    private System.IDisposable disposable;
+
+    public Effects(sbyte pos)
     {
+        EffectMessagePipeHolder holder = new EffectMessagePipeHolder();
+
         attackBuff = new AttackBuff();
+        attackBuff.holder = holder;
         magicBuff = new MagicBuff();
+        magicBuff.holder = holder;
         defBuff = new DefBuff();
+        defBuff.holder = holder;
         agiBuff = new AgiBuff();
+        agiBuff.holder = holder;
 
-        breakePosture = new BreakePosture(formNum);
+        breakePosture = new BreakePosture(pos);
+        breakePosture.holder = holder;
+
+
+
     }
 
-    public float GetPosture()
+    ~Effects()
     {
-        return breakePosture.GetEffect();
+        disposable?.Dispose();
     }
-    public float GetPosture(bool special)
+
+    /*
+    private void ResetEffectsValue()
     {
-        return breakePosture.GetEffect(special);
+        attackBuff.ResetValue();
+        magicBuff.ResetValue();
+        defBuff.ResetValue();
+        agiBuff.ResetValue();
+
+        breakePosture.ResetValid();
     }
+    */
+
+
+
 }
 
 
@@ -48,29 +105,24 @@ public class BaseFloatMultiEffect
 
     public int remaining { get; private set; }
 
-    protected IAsyncSubscriber<BattleSceneMessage.TurnEndMessage> turnEndASub;
-    protected IAsyncSubscriber<BattleSceneMessage.BattlePrepareMessage> prepareASub;
+    public EffectMessagePipeHolder holder;
 
-    protected System.IDisposable disposeStart;
+    //
+    //protected IAsyncSubscriber<BattleSceneMessage.BattlePrepareMessage> prepareASub;
+
     protected System.IDisposable disposable;
 
     //コンストラクタ
-    public BaseFloatMultiEffect()
+    public BaseFloatMultiEffect( )
     {
         //掛け算なので初期値は1
         this.value = 1.0f;
         this.remaining = 0;
 
-        this.turnEndASub = GlobalMessagePipe.GetAsyncSubscriber<BattleSceneMessage.TurnEndMessage>();
-        this.prepareASub = GlobalMessagePipe.GetAsyncSubscriber<BattleSceneMessage.BattlePrepareMessage>();
+        //this.turnEndASub = GlobalMessagePipe.GetAsyncSubscriber<BattleSceneMessage.TurnEndMessage>();
 
 
-        disposeStart = prepareASub.Subscribe(async (get,ct) =>
-        {
-            //Debug.Log("StartBattle");
-            ResetValue();
 
-        });
         
     }
 
@@ -79,7 +131,6 @@ public class BaseFloatMultiEffect
     ~BaseFloatMultiEffect()
     {
         //Debug.Log("finally");
-        disposeStart?.Dispose();
         disposable?.Dispose();
     }
 
@@ -97,12 +148,19 @@ public class BaseFloatMultiEffect
 
     protected void SetSubscriber()
     {
-        disposable = turnEndASub.Subscribe(async (get,ct) =>
+        var bag = DisposableBag.CreateBuilder();
+
+        holder.turnEndASub.Subscribe(async (get,ct) =>
         {
             //Debug.Log("turnEnd");
 
             RemainingCheck();
-        });
+        }).AddTo(bag);
+        holder.endASub.Subscribe(async (get, ct) =>
+        {
+            ResetValue();
+        }).AddTo(bag);
+        disposable = bag.Build();
     }
 
     protected void RemainingCheck()
@@ -131,11 +189,9 @@ public class BaseBoolFloatEffect
     //public float value { get; private set; }
     public int remaining { get; protected set; }
 
-    protected IAsyncSubscriber<BattleSceneMessage.TurnEndMessage> turnEndASub;
-    protected IAsyncSubscriber<BattleSceneMessage.BattlePrepareMessage> prepareASub;
+    public EffectMessagePipeHolder holder;
 
-    protected System.IDisposable disposeStart;
-    protected System.IDisposable disposeValid;
+
     protected System.IDisposable disposable;
 
     public BaseBoolFloatEffect()
@@ -143,21 +199,13 @@ public class BaseBoolFloatEffect
         valid = false;
         this.remaining = 0;
 
-        this.turnEndASub = GlobalMessagePipe.GetAsyncSubscriber<BattleSceneMessage.TurnEndMessage>();
-        this.prepareASub = GlobalMessagePipe.GetAsyncSubscriber<BattleSceneMessage.BattlePrepareMessage>();
 
-        disposeStart = prepareASub.Subscribe(async (get, ct) =>
-        {
-            ResetValid();
 
-        });
     }
 
     ~BaseBoolFloatEffect()
     {
         //Debug.Log("finally");
-        disposeStart?.Dispose();
-        disposeValid?.Dispose();
         disposable?.Dispose();
     }
 
@@ -173,6 +221,8 @@ public class BaseBoolFloatEffect
     }
 
 
+
+
     public void ResetValid()
     {
         valid = false;
@@ -182,45 +232,36 @@ public class BaseBoolFloatEffect
 
 public class BreakePosture: BaseBoolFloatEffect
 {
-    public BreakePosture(sbyte formNum)
+    public sbyte pos;
+    public BreakePosture(sbyte pos)
     {
-        var breakSub = GlobalMessagePipe.GetSubscriber<sbyte, BreakePostureMessage>();
-        disposeValid = breakSub.Subscribe(formNum, info =>
-        {
-            //Debug.Log("break");
-            valid = true;
-            remaining = 1;
-            disposable = turnEndASub.Subscribe(async (info, ct) =>
-            {
-                RemainingCheck();
-            });
-
-        });
+        this.pos = pos;
     }
 
-    public float GetEffect()
-    {
-        //Debug.Log(valid);
-        if (valid)
-        {
-            return 1.5f;
-        }
-        else
-        {
-            return 1.0f;
-        }
-    }
-
-    public float GetEffect(bool special)
+    //
+    public bool SetValid()
     {
         if (valid)
         {
-            return 2.0f;
+            return false;
         }
-        else
+        disposable?.Dispose();
+
+        valid = true;
+        remaining = 1;
+        var bag = DisposableBag.CreateBuilder();
+        holder.turnEndASub.Subscribe(async (info, ct) =>
         {
-            return 1.0f;
-        }
+            RemainingCheck();
+        }).AddTo(bag);
+
+        holder.endASub.Subscribe(async (info, ct) =>
+        {
+            ResetValid();
+        }).AddTo(bag);
+
+        disposable = bag.Build();
+        return true;
     }
 
 }

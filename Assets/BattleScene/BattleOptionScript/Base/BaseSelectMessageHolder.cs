@@ -3,27 +3,38 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using MessagePipe;
-using VContainer;
-using VContainer.Unity;
+
 
 using BattleSceneMessage;
 
-
-public class BaseSelectMessageHolder : MonoBehaviour
+[CreateAssetMenu(menuName = "selectOptionHolder/battleScene/baseSelectMessaggeHolder")]
+public class BaseSelectMessageHolder : MessageableScriptableObject
 {
-    [Inject] protected readonly ISubscriber<InputLayerSO, UpInput> upSubscriber;
-    [Inject] protected readonly ISubscriber<InputLayerSO, DownInput> downSubscriber;
-    [Inject] protected readonly ISubscriber<InputLayerSO, RightInput> rightSubscriber;
-    [Inject] protected readonly ISubscriber<InputLayerSO, LeftInput> leftSubscriber;
+    public ISubscriber<InputLayerSO, UpInput> upSub; //{ get; private set; }
+    public ISubscriber<InputLayerSO, DownInput> downSub;
+    public ISubscriber<InputLayerSO, RightInput> rightSub;
+    public ISubscriber<InputLayerSO, LeftInput> leftSub;
 
-    [Inject] protected readonly ISubscriber<InputLayerSO, EnterInput> enterSub;
+    public ISubscriber<InputLayerSO, EnterInput> enterSub;
 
-    [Inject] protected readonly IPublisher<InputLayerSO, DisposeSelect> selectDispPub;
-    [Inject] protected readonly ISubscriber<InputLayerSO, DisposeSelect> selectDispSub;
+    public IPublisher<InputLayerSO, DisposeSelect> selectDispPub;
+    public ISubscriber<InputLayerSO, DisposeSelect> selectDispSub;
 
     [SerializeField]
-    protected InputLayerSO inputLayerSO;
+    public InputLayerSO inputLayerSO;
 
-    protected System.IDisposable disposableInput;
+
+    public override void MessageStart()
+    {
+        upSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, UpInput>();
+        downSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, DownInput>();
+        rightSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, RightInput>();
+        leftSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, LeftInput>();
+
+        enterSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, EnterInput>();
+
+        selectDispPub = GlobalMessagePipe.GetPublisher<InputLayerSO, DisposeSelect>();
+        selectDispSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, DisposeSelect>();
+    }
 
 }

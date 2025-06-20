@@ -6,7 +6,7 @@ namespace SkillStruct
     /// 編成，スキル修得したタイミングで行う
     /// From_(各種類の)SkillHolder, To_FormationChara
     /// </summary>
-    
+
     //ActiveSkill
     public class RegistActiveSkill
     {
@@ -40,9 +40,9 @@ namespace SkillStruct
 
     public struct UnregistPassiveSkill { }
 
-    
+
     //パッシブスキルの発動タイミングなどのSub
-    public struct TauntSuccessMessage 
+    public struct TauntSuccessMessage
     {
         public sbyte target;
 
@@ -51,8 +51,16 @@ namespace SkillStruct
             this.target = target;
         }
     }
-    
+
     public struct BreakePostureMessage { }
+    public struct BreakPostureSuccessEnemy 
+    {
+        public sbyte pos;
+        public BreakPostureSuccessEnemy(sbyte pos)
+        {
+            this.pos = pos;
+        }
+    }
     
     /// <summary>
     /// From_FormationChara, To_BattleOptionのコンポーネント
@@ -261,6 +269,18 @@ namespace SkillStruct
         }
     }
 
+    public class AttackBuffMessage
+    {
+        public float activeRatio;
+        public int remain;
+
+        public AttackBuffMessage(float activeRatio, int remain)
+        {
+            this.activeRatio = activeRatio;
+            this.remain = remain;
+        }
+    }
+
     //moveSKill
     public struct NormalMoveToFront
     {
@@ -366,6 +386,7 @@ namespace SkillStruct
 
 
 
+
     //sbyteの加減算を扱うための構造体
     public struct SbyteHandler
     {
@@ -434,6 +455,7 @@ public struct BookCommonActiveTargetMessage
 /// </summary>
 //From_
 public struct EnemyTargetingAllFrontChara { }
+public struct EnemyTargetingAllChara { }
 public struct EnemyTargetingSingleChara { }
 
 
@@ -479,6 +501,18 @@ public struct FormCharacterBootMessage
     }
 }
 
+public struct FormEnemyBootMessage
+{
+    public int enemyKey;
+    public sbyte formNum;
+
+    public FormEnemyBootMessage(int enemyKey, sbyte formNum)
+    {
+        this.enemyKey = enemyKey;
+        this.formNum = formNum;
+    }
+}
+
 //編成を変更でなく解除した時のメッセージ
 //public struct RemoveFormCharacterMessage { }
 
@@ -486,9 +520,9 @@ public struct FormCharacterBootMessage
 //指定のキャラクターデータへの参照を渡す
 public class FormCharacterMessage
 {
-    public MSO_CharacterDataSO charaData;
+    public CharacterDataSO charaData;
 
-    public FormCharacterMessage(MSO_CharacterDataSO charaData)
+    public FormCharacterMessage(CharacterDataSO charaData)
     {
         this.charaData = charaData;
     }
@@ -534,7 +568,17 @@ public struct TauntApproachSimulate
         this.enemyForm = enemyForm;
     }
 }
-public struct TauntSimulateCancell { }
+public struct TauntSimulateCancell 
+{
+    public sbyte form;
+    public TauntSimulateCancell(sbyte form)
+    {
+        this.form = form;
+    }
+
+}
+
+public struct MoveOptionChange { }
 
 public struct SetEnemyImage { }
 
@@ -548,3 +592,14 @@ public struct DescriptionDemendMessage
     }
 }
 public struct DescriptionFinishMessage { }
+
+public struct InputLayer
+{
+    public InputLayerSO inputLayerSO;
+
+    public InputLayer(InputLayerSO inputLayerSO)
+    {
+        this.inputLayerSO = inputLayerSO;
+    }
+}
+public struct InputLayerChanged { }

@@ -23,7 +23,7 @@ using SkillStruct;
 using UnityEngine.EventSystems;
 
 
-public class ActionTargetController : BaseSelectMessageHolder, IPointerClickHandler
+public class ActionTargetController : MonoBehaviour, IPointerClickHandler
 {
 
     private sbyte targetPos;
@@ -36,14 +36,17 @@ public class ActionTargetController : BaseSelectMessageHolder, IPointerClickHand
 
     //自分の識別番号と自分からつながる識別番号
     [SerializeField]
-    private int myNum;
-    [SerializeField]
     private int upNum;
+    [SerializeField]
+    private int myNum;
     [SerializeField]
     private int downNum;
 
     [SerializeField]
     private SelectSourceImageSO sourceImageSO;
+
+    [SerializeField]
+    private BaseSelectMessageHolder holder;
 
     //アタッチされたオブジェクトのイメージ
     private Image image;
@@ -71,16 +74,20 @@ public class ActionTargetController : BaseSelectMessageHolder, IPointerClickHand
 
     private System.IDisposable disposableReturn;
 
-    private ISubscriber<Active_SingleEnemyTarget> singleEnemySub;
-    private ISubscriber<Active_SingleCharaTarget> singleCharaSub;
+    //private ISubscriber<Active_SingleEnemyTarget> singleEnemySub;
+    //private ISubscriber<Active_SingleCharaTarget> singleCharaSub;
 
 
     private IAsyncSubscriber<ActionSelectBookMessage> bookASub;
     private IPublisher<BookCommonActiveTargetMessage> bookTargetPub;
 
+    private System.IDisposable disposableInput;
+
+
     void Awake()
     {
         image = GetComponent<Image>();
+
 
         //cts = new CancellationTokenSource();
 
@@ -89,8 +96,9 @@ public class ActionTargetController : BaseSelectMessageHolder, IPointerClickHand
         selectPublisher = GlobalMessagePipe.GetPublisher<SelectMessage, SelectChange>();
         selectSubscriber = GlobalMessagePipe.GetSubscriber<SelectMessage, SelectChange>();
 
-        singleEnemySub = GlobalMessagePipe.GetSubscriber<Active_SingleEnemyTarget>();
-        singleCharaSub = GlobalMessagePipe.GetSubscriber<Active_SingleCharaTarget>();
+        var singleEnemySub = GlobalMessagePipe.GetSubscriber<Active_SingleEnemyTarget>();
+        var singleCharaSub = GlobalMessagePipe.GetSubscriber<Active_SingleCharaTarget>();
+        var allCharaSub = GlobalMessagePipe.GetSubscriber<Active_AllCharaTarget>();
 
         returnTargetSub = GlobalMessagePipe.GetSubscriber<ReturnTargetName>();
         nextTargetPub = GlobalMessagePipe.GetPublisher<sbyte, GetNextTargetName>();
@@ -103,7 +111,7 @@ public class ActionTargetController : BaseSelectMessageHolder, IPointerClickHand
         var bag = DisposableBag.CreateBuilder();
 
         /*
-        selectSubscriber.Subscribe(new SelectMessage(inputLayerSO, myNum), i =>
+        selectSubscriber.Subscribe(new SelectMessage(holder.inputLayerSO, myNum), i =>
         {
             SelectThisComponent();
         }).AddTo(bag);
@@ -126,7 +134,7 @@ public class ActionTargetController : BaseSelectMessageHolder, IPointerClickHand
             //=>逆にPublishだけで次にはいってくれない
             nextTargetPub.Publish(targetPos, new GetNextTargetName());
             
-            disposableSelect = selectSubscriber.Subscribe(new SelectMessage(inputLayerSO, myNum), i =>
+            disposableSelect = selectSubscriber.Subscribe(new SelectMessage(holder.inputLayerSO, myNum), i =>
             {
                 SelectThisComponent();
                 ChangeTargetPrepare();
@@ -153,11 +161,21 @@ public class ActionTargetController : BaseSelectMessageHolder, IPointerClickHand
             //=>逆にPublishだけで次にはいってくれない
             nextTargetPub.Publish(targetPos, new GetNextTargetName());
 
-            disposableSelect = selectSubscriber.Subscribe(new SelectMessage(inputLayerSO, myNum), i =>
+            disposableSelect = selectSubscriber.Subscribe(new SelectMessage(holder.inputLayerSO, myNum), i =>
             {
                 SelectThisComponent();
                 ChangeTargetPrepare();
             });
+        }).AddTo(bag);
+
+        allCharaSub.Subscribe(ActionTargetController =>
+        {
+            //増えてくるようならSOに纏めてアタッチ
+            targetPos = FormationScope.AllChara();
+            targeting = true;
+            text.SetText(FormationScope.AllCharaText());
+
+
         }).AddTo(bag);
 
         bookASub.Subscribe(async (get, ct) =>
@@ -180,7 +198,7 @@ public class ActionTargetController : BaseSelectMessageHolder, IPointerClickHand
 
     private async UniTask SelectThisComponent()
     {
-        selectDispPub.Publish(inputLayerSO, new DisposeSelect());
+        holder.selectDispPub.Publish(holder.inputLayerSO, new DisposeSelect());
 
 
         //現在走っているPublishを受け入れないために1frame待つ
@@ -193,18 +211,18 @@ public class ActionTargetController : BaseSelectMessageHolder, IPointerClickHand
 
 
 
-        upSubscriber.Subscribe(inputLayerSO, i => {
+        holder.upSub.Subscribe(holder.inputLayerSO, i => {
             NextUpSelect();
         }).AddTo(bag);
 
-        downSubscriber.Subscribe(inputLayerSO, i => {
+        holder.downSub.Subscribe(holder.inputLayerSO, i => {
             NextDownSelect();
         }).AddTo(bag);
-        enterSub.Subscribe(inputLayerSO, i => {
+        holder.enterSub.Subscribe(holder.inputLayerSO, i => {
             NextDownSelect();
         }).AddTo(bag);
 
-        selectDispSub.Subscribe(inputLayerSO, i => 
+        holder.selectDispSub.Subscribe(holder.inputLayerSO, i => 
         {
             UnselectThisComponent();
         }).AddTo(bag);
@@ -220,7 +238,7 @@ public class ActionTargetController : BaseSelectMessageHolder, IPointerClickHand
     {
         var bag = DisposableBag.CreateBuilder();
 
-        rightSubscriber.Subscribe(inputLayerSO, i => {
+        holder.rightSub.Subscribe(holder.inputLayerSO, i => {
             //Debug.Log(targetPos);
             disposableReturn = returnTargetSub.Subscribe(get =>
             {
@@ -236,7 +254,7 @@ public class ActionTargetController : BaseSelectMessageHolder, IPointerClickHand
 
         }).AddTo(bag);
 
-        leftSubscriber.Subscribe(inputLayerSO, i =>
+        holder.leftSub.Subscribe(holder.inputLayerSO, i =>
         {
             disposableReturn = returnTargetSub.Subscribe(get =>
             {
@@ -276,16 +294,16 @@ public class ActionTargetController : BaseSelectMessageHolder, IPointerClickHand
     private void NextUpSelect()
     {
 
-        UnselectThisComponent();
-        selectPublisher.Publish(new SelectMessage(inputLayerSO, upNum), new SelectChange());
+        //UnselectThisComponent();
+        selectPublisher.Publish(new SelectMessage(holder.inputLayerSO, upNum), new SelectChange());
 
     }
 
     private void NextDownSelect()
     {
-        UnselectThisComponent();
+        //UnselectThisComponent();
 
-        selectPublisher.Publish(new SelectMessage(inputLayerSO, downNum), new SelectChange());
+        selectPublisher.Publish(new SelectMessage(holder.inputLayerSO, downNum), new SelectChange());
 
     }
 

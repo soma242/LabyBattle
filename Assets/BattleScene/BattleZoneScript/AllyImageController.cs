@@ -119,10 +119,23 @@ public class AllyImageController : MonoBehaviour
 
         prepareASub.Subscribe(async (get, ct) =>
         {
+            //一度しか入っていない
+            Debug.Log("prepare");
             int i = 0;
             sbyte s = FormationScope.FirstChara();
-            foreach(var ally in allyCatalog)
+            disposableSelectStart?.Dispose();
+
+            //Scene読み込みごとにSubが行われている
+            //prepareASub  Pub側は一度しか読み込まれていないとかくにん
+            //selectStartSub  Pub側は一度しか読み込まれていないとかくにん
+
+            //bagSの生成およびBuildがforeachの中に入っていた
+            //=>都度生成されてBuildされてないタイミングのものはリーク(残り続ける)
+            var bagS = DisposableBag.CreateBuilder();
+
+            foreach (var ally in allyCatalog)
             {
+
                 if (!formationCommander.GetParticipant(i))
                 {
                     i++;
@@ -132,10 +145,12 @@ public class AllyImageController : MonoBehaviour
                 ally.SetImage(formationCommander.GetBattleImage(i));
                 ally.SetMovePosition(formationCommander.GetMovePosition(i));
 
-                var bagS = DisposableBag.CreateBuilder();
                 selectStartSub.Subscribe(s, get =>
                 {
                     listNum = FormationScope.FormToListChara(get.charaForm);
+                    disposableEnable?.Dispose();
+                    //Debug.Log("allyImage" + listNum);
+
                     var bagE = DisposableBag.CreateBuilder();
 
                     toBackSimSub.Subscribe(get =>
@@ -151,14 +166,16 @@ public class AllyImageController : MonoBehaviour
 
                     disposableEnable = bagE.Build();
 
+
                 }).AddTo(bagS);
 
-                disposableSelectStart = bagS.Build();
 
                 i++;
                 s++;
 
             }
+            disposableSelectStart = bagS.Build();
+
         }).AddTo(bag);
 
         positionChangeSub.Subscribe(get =>
@@ -184,6 +201,7 @@ public class AllyImageController : MonoBehaviour
         //その場で待機。
         waitSimSub.Subscribe(get =>
         {
+            disposableDisable?.Dispose();
             allyCatalog[listNum].simuCanvas.enabled = false;
 
             var bagD = DisposableBag.CreateBuilder();
@@ -203,6 +221,8 @@ public class AllyImageController : MonoBehaviour
 
         }).AddTo(bag);
 
+
+
         var dropCharaSub = GlobalMessagePipe.GetSubscriber<DropCharaMessage>();
 
         dropCharaSub.Subscribe(get =>
@@ -215,79 +235,11 @@ public class AllyImageController : MonoBehaviour
 
     void OnDestroy()
     {
+        //Debug.Log("destroyAllyImageCont");
         disposableOnDestroy?.Dispose();
+        disposableDisable?.Dispose();
+        disposableEnable?.Dispose();
+        disposableSelectStart?.Dispose();
+        //Debug.Log("destroyAllyImageCont Complete");
     }
-
-    /*
-    [SerializeField] private MSO_FormationCharaSO formationSO;
-    [SerializeField]
-    private MovePosition imagePos;
-    private MovePosition currentPos;
-
-    private ISubscriber<sbyte, ChangeBattleImage> changeImageSub;
-    private ISubscriber<sbyte, MovePositionChangeMessage> positionChangeSub;
-
-    private System.IDisposable disposableOnDestroy;
-
-
-
-
-
-
-
-
-    private Image image;
-    //private ISubscriber<>
-
-
-    //private System.IDisposable disposable;
-
-    void Awake()
-    {
-
-        image = GetComponent<Image>();
-
-        var bag = DisposableBag.CreateBuilder();
-
-        changeImageSub = GlobalMessagePipe.GetSubscriber<sbyte, ChangeBattleImage>();
-        positionChangeSub = GlobalMessagePipe.GetSubscriber<sbyte, MovePositionChangeMessage>();
-
-
-
-        changeImageSub.Subscribe(formationSO.GetFormNum(), get =>
-        {
-            image.sprite = formationSO.setChara.charaImages.battleImage;
-
-        }).AddTo(bag);
-
-        positionChangeSub.Subscribe(formationSO.GetFormNum(),get =>
-        {
-            ChangePos(get.currentPos);
-        }).AddTo(bag);
-
-
-
-
-
-        disposableOnDestroy = bag.Build();
-    }
-    void OnDestroy()
-    {
-        disposableOnDestroy.Dispose();
-    }
-
-    private void ChangePos(MovePosition position)
-    {
-        if (imagePos == position)
-        {
-            image.enabled = true;
-
-        }
-        else
-        {
-            image.enabled = false;
-        }
-    }
-    */
-
 }

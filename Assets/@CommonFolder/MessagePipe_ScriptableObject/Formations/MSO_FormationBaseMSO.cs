@@ -20,6 +20,7 @@ public class MSO_FormationBaseMSO : MessageableScriptableObject
     protected IPublisher<DamageNoticeMessage> damageNoticePub;
 
 
+
     protected void CommonSubRegist()
     {
         normalDamageSub = GlobalMessagePipe.GetSubscriber<sbyte, NormalDamageCalcMessage>();

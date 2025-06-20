@@ -8,7 +8,6 @@ using SkillStruct;
 [CreateAssetMenu(menuName = "activeSkill/skillTarget/SingleEnemy")]
 public class MSO_SingleEnemyTargetSO : MSO_ActiveSkillTargetSO
 {
-    private IPublisher<Active_SingleEnemyTarget> targetPub;
 
 
 

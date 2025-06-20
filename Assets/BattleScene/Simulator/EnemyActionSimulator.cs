@@ -9,6 +9,8 @@ using MessagePipe;
 using SkillStruct;
 using BattleSceneMessage;
 
+using Cysharp.Threading.Tasks;
+
 #pragma warning disable CS1998 // disable warning
 #pragma warning disable CS4014 // disable warning
 
@@ -29,6 +31,8 @@ public class EnemyActionSimulateComp
     public Canvas allCanvas;
 
     public Image hpCircle;
+
+
 
 
     public void ResetSimulater()
@@ -92,6 +96,9 @@ public class EnemyActionSimulator : MonoBehaviour
 
         damageSub = GlobalMessagePipe.GetSubscriber<DamageNoticeMessage>();
 
+        var turnEndASub = GlobalMessagePipe.GetAsyncSubscriber<TurnEndMessage>();
+
+
         var dropEnemySub = GlobalMessagePipe.GetSubscriber<DropEnemyMessage>();
 
         var bag = DisposableBag.CreateBuilder();
@@ -127,8 +134,8 @@ public class EnemyActionSimulator : MonoBehaviour
 
         dropEnemySub.Subscribe(get =>
         {
-            int listNum = FormationScope.FormToListEnemy(get.pos);
-            simulateComp[listNum].allCanvas.enabled = false;
+            int num = FormationScope.FormToListEnemy(get.pos);
+            simulateComp[num].allCanvas.enabled = false;
         }).AddTo(bag);
 
         selectorNameSub.Subscribe(get =>
@@ -148,21 +155,63 @@ public class EnemyActionSimulator : MonoBehaviour
             simulateComp[listNum].targetText.SetText(formCommander.GetCharaName(FormationScope.FormToListChara(get.target)));
         }).AddTo(bag);
 
+        //tauntが効く行動のEnemyからPubを受け取ってSubを開始する
         frontTargetSub.Subscribe(info =>
         {
+            //Debug.Log("frontTarget" + info.enemyForm);
+            //disposableTaunt?.Dispose();
+
             SimulateFrontChara(FormationScope.FormToListEnemy(info.enemyForm));
 
             var bagT = DisposableBag.CreateBuilder();
-            approachSimuSub.Subscribe(info.enemyForm, info =>
+            approachSimuSub.Subscribe(info.enemyForm, async info =>
             {
+                await UniTask.NextFrame();
+
+                //Debug.Log("approach");
                 SimulateTaunt(FormationScope.FormToListEnemy(info.enemyForm));
                 simulatedNum = info.enemyForm;
-                disposableCancell = simuCancellSub.Subscribe(get =>
+
+                disposableCancell?.Dispose();
+                var bagC = DisposableBag.CreateBuilder();
+
+                //From_MoveTargetOption
+                //ターゲット変更時にSub
+                simuCancellSub.Subscribe(get =>
+                {
+                    //Debug.Log("cancel");
+                    simulateComp[FormationScope.FormToListEnemy(simulatedNum)].changeTargetCanvas.enabled = false;
+                    //simulateComp[FormationScope.FormToListEnemy(get.form)].changeTargetCanvas.enabled = true;
+                    //simulatedNum = get.form;
+                    //var simulatePub = GlobalMessagePipe.GetPublisher<sbyte, TauntApproachSimulate>();
+                    //simulatePub.Publish(get.form, new TauntApproachSimulate(get.form));
+                }).AddTo(bagC);
+
+                var changeSub = GlobalMessagePipe.GetSubscriber<MoveOptionChange>();
+                changeSub.Subscribe(info =>
                 {
                     simulateComp[FormationScope.FormToListEnemy(simulatedNum)].changeTargetCanvas.enabled = false;
-                });
+                    disposableCancell?.Dispose();
+                }).AddTo(bagC);
+
+                disposableCancell = bagC.Build();
+
             }).AddTo(bagT);
-            disposableTaunt = bagT.Build();
+
+            if(disposableTaunt is not null)
+            {
+                var d = bagT.Build();
+                //Debug.Log("combine");
+                disposableTaunt = DisposableBag.Create(disposableTaunt, d); // combine disposable.
+            }
+            else
+            {
+                disposableTaunt = bagT.Build();
+            }
+
+
+            //disposableTaunt = bagT.Build();
+
         }).AddTo(bag);
 
         damageSub.Subscribe(get =>
@@ -176,6 +225,15 @@ public class EnemyActionSimulator : MonoBehaviour
             simulateComp[i].hpCircle.fillAmount = formCommander.GetEnemyRatioOnHP(i);
         }).AddTo(bag);
 
+        turnEndASub.Subscribe(async(get,ct) =>
+        {
+            disposableTaunt?.Dispose();
+
+            foreach (EnemyActionSimulateComp comp in simulateComp)
+            {
+                comp.changeTargetCanvas.enabled = false;
+            }
+        }).AddTo(bag);
 
         disposableOnDestory = bag.Build();
 

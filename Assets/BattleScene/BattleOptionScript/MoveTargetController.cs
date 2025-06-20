@@ -23,7 +23,7 @@ using UnityEngine.EventSystems;
 
 
 
-public class MoveTargetController : BaseSelectMessageHolder, IPointerClickHandler
+public class MoveTargetController : MonoBehaviour, IPointerClickHandler
 {
     private sbyte targetPos;
 
@@ -34,15 +34,19 @@ public class MoveTargetController : BaseSelectMessageHolder, IPointerClickHandle
     private TMP_Text text;
 
     //自分の識別番号と自分からつながる識別番号
-    [SerializeField]
-    private int myNum;
+
     [SerializeField]
     private int upNum;
+    [SerializeField]
+    private int myNum;
     [SerializeField]
     private int downNum;
 
     [SerializeField]
     private SelectSourceImageSO sourceImageSO;
+
+    [SerializeField]
+    private BaseSelectMessageHolder holder;
 
     //アタッチされたオブジェクトのイメージ
     private Image image;
@@ -69,6 +73,7 @@ public class MoveTargetController : BaseSelectMessageHolder, IPointerClickHandle
     private IPublisher<sbyte, GetPreTargetName> preTargetPub;
 
     private System.IDisposable disposableReturn;
+    private System.IDisposable disposableInput;
 
     private IPublisher<MoveSimulateMessage> moveSimuPub;
 
@@ -117,7 +122,7 @@ public class MoveTargetController : BaseSelectMessageHolder, IPointerClickHandle
 
             text.SetText(FormationScope.NoneTargetText());
             moveSimuPub.Publish(new MoveSimulateMessage(FormationScope.NoneChara()));
-            disposableSelect = selectSubscriber.Subscribe(new SelectMessage(inputLayerSO, myNum), i =>
+            disposableSelect = selectSubscriber.Subscribe(new SelectMessage(holder.inputLayerSO, myNum), i =>
             {
                 SelectThisComponent();
             });
@@ -129,17 +134,17 @@ public class MoveTargetController : BaseSelectMessageHolder, IPointerClickHandle
             targetPos = FormationScope.FirstEnemy();
             targeting = true;
 
-            moveSimuPub.Publish(new MoveSimulateMessage(targetPos));
             disposableReturn = returnTargetSub.Subscribe(get =>
             {
                 targetPos = get.targetPos;
+                moveSimuPub.Publish(new MoveSimulateMessage(targetPos));
                 text.SetText(get.targetName);
                 disposableReturn?.Dispose();
             });
             //next,preは受け取り側で次に回すための分割なので，現在のものを受け取りたければどちらでもいい
             //=>逆にPublishだけで次にはいってくれない
 
-            disposableSelect = selectSubscriber.Subscribe(new SelectMessage(inputLayerSO, myNum), i =>
+            disposableSelect = selectSubscriber.Subscribe(new SelectMessage(holder.inputLayerSO, myNum), i =>
             {
                 SelectThisComponent();
                 ChangeTargetPrepare();
@@ -153,6 +158,8 @@ public class MoveTargetController : BaseSelectMessageHolder, IPointerClickHandle
         {
             bookTargetPub.Publish(new BookCommonMoveTargetMessage(targetPos));
         }).AddTo(bag);
+
+
         
 
         /*
@@ -174,7 +181,7 @@ public class MoveTargetController : BaseSelectMessageHolder, IPointerClickHandle
             //=>逆にPublishだけで次にはいってくれない
             nextTargetPub.Publish(targetPos, new GetNextTargetName());
 
-            disposableSelect = selectSubscriber.Subscribe(new SelectMessage(inputLayerSO, myNum), i =>
+            disposableSelect = selectSubscriber.Subscribe(new SelectMessage(holder.inputLayerSO, myNum), i =>
             {
                 SelectThisComponent();
             });
@@ -196,9 +203,9 @@ public class MoveTargetController : BaseSelectMessageHolder, IPointerClickHandle
 
     private async UniTask SelectThisComponent()
     {
-        selectDispPub.Publish(inputLayerSO, new DisposeSelect());
+        holder.selectDispPub.Publish(holder.inputLayerSO, new DisposeSelect());
 
-
+        //Debug.Log("SelectMT");
         //現在走っているPublishを受け入れないために1frame待つ
         await UniTask.NextFrame();
 
@@ -210,18 +217,22 @@ public class MoveTargetController : BaseSelectMessageHolder, IPointerClickHandle
 
 
 
-        upSubscriber.Subscribe(inputLayerSO, i => {
+        holder.upSub.Subscribe(holder.inputLayerSO, i => {
+            //Debug.Log("up");
+
             NextUpSelect();
         }).AddTo(bag);
 
-        downSubscriber.Subscribe(inputLayerSO, i => {
+        holder.downSub.Subscribe(holder.inputLayerSO, i => {
+            //Debug.Log("down");
+
             NextDownSelect();
         }).AddTo(bag);
-        enterSub.Subscribe(inputLayerSO, i => {
+        holder.enterSub.Subscribe(holder.inputLayerSO, i => {
             NextDownSelect();
         }).AddTo(bag);
 
-        selectDispSub.Subscribe(inputLayerSO, i =>
+        holder.selectDispSub.Subscribe(holder.inputLayerSO, i =>
         {
             UnselectThisComponent();
         }).AddTo(bag);
@@ -235,14 +246,14 @@ public class MoveTargetController : BaseSelectMessageHolder, IPointerClickHandle
     {
         var bag = DisposableBag.CreateBuilder();
 
-        rightSubscriber.Subscribe(inputLayerSO, i => {
-            tSimuCancellPub.Publish(new TauntSimulateCancell());
+        holder.rightSub.Subscribe(holder.inputLayerSO, i => {
             //Debug.Log(targetPos);
             disposableReturn = returnTargetSub.Subscribe(get =>
             {
                 targetPos = get.targetPos;
                 text.SetText(get.targetName);
                 moveSimuPub.Publish(new MoveSimulateMessage(targetPos));
+                tSimuCancellPub.Publish(new TauntSimulateCancell(targetPos));
 
                 //Debug.Log("sub");
                 disposableReturn?.Dispose();
@@ -254,14 +265,14 @@ public class MoveTargetController : BaseSelectMessageHolder, IPointerClickHandle
 
         }).AddTo(bag);
 
-        leftSubscriber.Subscribe(inputLayerSO, i =>
+        holder.leftSub.Subscribe(holder.inputLayerSO, i =>
         {
-            tSimuCancellPub.Publish(new TauntSimulateCancell());
             disposableReturn = returnTargetSub.Subscribe(get =>
             {
                 targetPos = get.targetPos;
                 text.SetText(get.targetName);
                 moveSimuPub.Publish(new MoveSimulateMessage(targetPos));
+                tSimuCancellPub.Publish(new TauntSimulateCancell(targetPos));
 
                 //Debug.Log("sub");
                 disposableReturn.Dispose();
@@ -276,6 +287,7 @@ public class MoveTargetController : BaseSelectMessageHolder, IPointerClickHandle
 
     private void UnselectThisComponent()
     {
+        //Debug.Log("dispOnUns");
 
         disposableInput?.Dispose();
         disposableTarget?.Dispose();
@@ -284,6 +296,7 @@ public class MoveTargetController : BaseSelectMessageHolder, IPointerClickHandle
 
     public async void OnPointerClick(PointerEventData pointerEventData)
     {
+
         SelectThisComponent();
         if (targeting)
         {
@@ -297,16 +310,16 @@ public class MoveTargetController : BaseSelectMessageHolder, IPointerClickHandle
     private void NextUpSelect()
     {
 
-        UnselectThisComponent();
-        selectPublisher.Publish(new SelectMessage(inputLayerSO, upNum), new SelectChange());
+        //UnselectThisComponent();
+        selectPublisher.Publish(new SelectMessage(holder.inputLayerSO, upNum), new SelectChange());
 
     }
 
     private void NextDownSelect()
     {
-        UnselectThisComponent();
+        //UnselectThisComponent();
 
-        selectPublisher.Publish(new SelectMessage(inputLayerSO, downNum), new SelectChange());
+        selectPublisher.Publish(new SelectMessage(holder.inputLayerSO, downNum), new SelectChange());
 
     }
 

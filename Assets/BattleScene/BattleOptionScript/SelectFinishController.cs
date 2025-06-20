@@ -19,7 +19,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine.EventSystems;
 
 
-public class SelectFinishController : BaseSelectMessageHolder, IPointerClickHandler
+public class SelectFinishController : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField]
     private Canvas canvas;
@@ -28,12 +28,14 @@ public class SelectFinishController : BaseSelectMessageHolder, IPointerClickHand
 
     //é©ï™ÇÃéØï î‘çÜÇ∆é©ï™Ç©ÇÁÇ¬Ç»Ç™ÇÈéØï î‘çÜ
     [SerializeField]
-    private int myNum;
-    [SerializeField]
     private int upNum;
+    [SerializeField]
+    private int myNum;
     [SerializeField]
     private int downNum;
 
+    [SerializeField]
+    private BaseSelectMessageHolder holder;
 
     //selectïœçXópMessagePipe
     //BuiltInContainer
@@ -46,6 +48,7 @@ public class SelectFinishController : BaseSelectMessageHolder, IPointerClickHand
     private IPublisher<BookCompleteMessage> completePub;
 
     private System.IDisposable disposableOnDestroy;
+    private System.IDisposable disposableInput;
 
     void Awake()
     {
@@ -59,7 +62,7 @@ public class SelectFinishController : BaseSelectMessageHolder, IPointerClickHand
         bookAPub = GlobalMessagePipe.GetAsyncPublisher<ActionSelectBookMessage>();
         completePub = GlobalMessagePipe.GetPublisher<BookCompleteMessage>();
 
-        disposableOnDestroy = selectSubscriber.Subscribe(new SelectMessage(inputLayerSO, myNum), i =>
+        disposableOnDestroy = selectSubscriber.Subscribe(new SelectMessage(holder.inputLayerSO, myNum), i =>
         {
             SelectThisComponent();
 
@@ -67,9 +70,15 @@ public class SelectFinishController : BaseSelectMessageHolder, IPointerClickHand
         });
     }
 
+    void OnDestroy()
+    {
+        disposableInput?.Dispose();
+        disposableOnDestroy?.Dispose();
+    }
+
     private async UniTask SelectThisComponent()
     {
-        selectDispPub.Publish(inputLayerSO, new DisposeSelect());
+        holder.selectDispPub.Publish(holder.inputLayerSO, new DisposeSelect());
         //åªç›ëñÇ¡ÇƒÇ¢ÇÈPublishÇéÛÇØì¸ÇÍÇ»Ç¢ÇΩÇﬂÇ…1frameë“Ç¬
         await UniTask.NextFrame();
 
@@ -80,15 +89,15 @@ public class SelectFinishController : BaseSelectMessageHolder, IPointerClickHand
 
 
 
-        upSubscriber.Subscribe(inputLayerSO, i => {
+        holder.upSub.Subscribe(holder.inputLayerSO, i => {
             NextUpSelect();
         }).AddTo(bag);
 
-        downSubscriber.Subscribe(inputLayerSO, i => {
+        holder.downSub.Subscribe(holder.inputLayerSO, i => {
             NextDownSelect();
         }).AddTo(bag);
 
-        enterSub.Subscribe(inputLayerSO, async get =>
+        holder.enterSub.Subscribe(holder.inputLayerSO, async get =>
         {
             await bookAPub.PublishAsync(new ActionSelectBookMessage());
 
@@ -97,7 +106,7 @@ public class SelectFinishController : BaseSelectMessageHolder, IPointerClickHand
             NextDownSelect();
         }).AddTo(bag);
 
-        selectDispSub.Subscribe(inputLayerSO, i =>
+        holder.selectDispSub.Subscribe(holder.inputLayerSO, i =>
         {
             UnselectThisComponent();
         }).AddTo(bag);
@@ -116,16 +125,16 @@ public class SelectFinishController : BaseSelectMessageHolder, IPointerClickHand
     private void NextUpSelect()
     {
 
-        UnselectThisComponent();
-        selectPublisher.Publish(new SelectMessage(inputLayerSO, upNum), new SelectChange());
+        //UnselectThisComponent();
+        selectPublisher.Publish(new SelectMessage(holder.inputLayerSO, upNum), new SelectChange());
 
     }
 
     private void NextDownSelect()
     {
-        UnselectThisComponent();
+        //UnselectThisComponent();
 
-        selectPublisher.Publish(new SelectMessage(inputLayerSO, downNum), new SelectChange());
+        selectPublisher.Publish(new SelectMessage(holder.inputLayerSO, downNum), new SelectChange());
 
     }
 

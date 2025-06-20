@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5df61d4ab50b210479de7c0233c2b46e, type: 3}
+  m_Name: Hero
+  m_EditorClassIdentifier: 
+  charaKey: {fileID: 11400000, guid: 3e6d708d8a6b3ed41b4a3726842a7e0e, type: 2}
+  charaImages: {fileID: 11400000, guid: c2521f47c37e08e48953bb9ac38dcdd3, type: 2}
+  skillTreeCatalog:
+  - skillTreeSO: {fileID: 11400000, guid: 7da3e45f7dadc7143bc09973aea52f77, type: 2}
+    treeLevel: 3
+  - skillTreeSO: {fileID: 11400000, guid: 56f0614985884fb49b853c45dd0eed6a, type: 2}
+    treeLevel: 1
+  charaName: hero
+  maxHP: 5000
+  attack: 150
+  magic: 0
+  defence: 0
+  mDefence: 0
+  agility: 15
+  targetRate: 50

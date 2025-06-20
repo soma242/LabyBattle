@@ -22,24 +22,28 @@ using SkillStruct;
 using UnityEngine.EventSystems;
 
 
-public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
+public class MoveOptionController : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
     private int listNum;
 
+    private int listMax;
 
     [SerializeField]
     private TMP_Text text;
 
     //自分の識別番号と自分からつながる識別番号
     [SerializeField]
-    private int myNum;
-    [SerializeField]
     private int upNum;
+    [SerializeField]
+    private int myNum;
     [SerializeField]
     private int downNum;
 
     [SerializeField]
     private SelectSourceImageSO sourceImageSO;
+
+    [SerializeField]
+    private BaseSelectMessageHolder holder;
 
     //アタッチされたオブジェクトのイメージ
     private Image image;
@@ -56,6 +60,8 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
 
     private IPublisher<ASkillSimulateMessage> simulatePub;
 
+    private IPublisher<MoveOptionChange> changePub;
+
     //select変更用MessagePipe
     //BuiltInContainer
     private IPublisher<SelectMessage, SelectChange> selectPublisher;
@@ -68,6 +74,9 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
 
     private ISubscriber<MoveSimulateMessage> moveSimuSub;
     private System.IDisposable disposableSimu;
+
+
+    private System.IDisposable disposableInput;
 
 
     
@@ -104,17 +113,23 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
         bookKeyPub = GlobalMessagePipe.GetPublisher<BookCommonMoveKeyMessage>();
 
 
+        changePub = GlobalMessagePipe.GetPublisher<MoveOptionChange>();
+
+
 
         var bag = DisposableBag.CreateBuilder();
 
-        //SkillListSubの前に個々に入ってしまっている。
-        selectSubscriber.Subscribe(new SelectMessage(inputLayerSO, myNum), i =>
+        //SkillListSubの前にここに入ってしまっている。
+        selectSubscriber.Subscribe(new SelectMessage(holder.inputLayerSO, myNum), i =>
         {
+            
             disposableSkill?.Dispose();
-            disposableBook?.Dispose();
             SelectThisComponent();
+
+            //左右のSub
             if (currentPos == MovePosition.front)
             {
+                //
                 ChangeSkillOnFrontPrepare();
 
 
@@ -124,20 +139,24 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
                 ChangeSkillOnBackPrepare();
                 
             }
+            
 
         }).AddTo(bag);
 
         skillListSub.Subscribe(get =>
         {
+            Debug.Log("listSub");
             listNum = 0;
             skillListHolderSO = get.skillListHolderSO;
             currentPos = get.currentPos;
 
+            disposableSimu?.Dispose();
+            disposableBook?.Dispose();
 
-
-            if(currentPos == MovePosition.front)
+            if (currentPos == MovePosition.front)
             {
-                disposableSimu?.Dispose();
+                listMax = skillListHolderSO.mFrontSkillCatalog.Count - 1;
+
                 text.SetText(skillListHolderSO.mFrontSkillCatalog[listNum].GetSkillName());
                 skillListHolderSO.mFrontSkillCatalog[listNum].skillTarget.SetTargetSort();
                 disposableSimu = moveSimuSub.Subscribe(get =>
@@ -147,6 +166,7 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
                 });
                 disposableBook = bookASub.Subscribe(async (get, ct) =>
                 {
+                    Debug.Log(listNum);
                     bookKeyPub.Publish(new BookCommonMoveKeyMessage(skillListHolderSO.mFrontSkillCatalog[listNum].GetSkillKey()));
                 });
 
@@ -156,8 +176,9 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
             }
             else
             {
+                listMax = skillListHolderSO.mBackSkillCatalog.Count - 1;
 
-                disposableSimu?.Dispose();
+
                 text.SetText(skillListHolderSO.mBackSkillCatalog[listNum].GetSkillName());
                 skillListHolderSO.mBackSkillCatalog[listNum].skillTarget.SetTargetSort();
                 disposableSimu = moveSimuSub.Subscribe(get =>
@@ -167,6 +188,7 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
                 });
                 disposableBook = bookASub.Subscribe(async (get, ct) =>
                 {
+                    Debug.Log(listNum);
                     bookKeyPub.Publish(new BookCommonMoveKeyMessage(skillListHolderSO.mBackSkillCatalog[listNum].GetSkillKey()));
                 });
 
@@ -182,6 +204,9 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
 
     void OnDestroy()
     {
+        cts?.Cancel();
+        disposableBook?.Dispose();
+        disposableSimu?.Dispose();
         disposableInput?.Dispose();
         disposableOnDestroy?.Dispose();
         disposableSkill?.Dispose();
@@ -189,12 +214,15 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
 
     private async UniTask SelectThisComponent()
     {
-
+        //二回layerSOの変更が入ると二回選択されて挙動がおかしく成るっぽい？
         //順番大事
-        selectDispPub.Publish(inputLayerSO, new DisposeSelect());
+        holder.selectDispPub.Publish(holder.inputLayerSO, new DisposeSelect());
 
         //現在走っているPublishを受け入れないために1frame待つ
         await UniTask.NextFrame();
+
+        //disposableInput?.Dispose();
+
 
         image.sprite = sourceImageSO.onSelect;
 
@@ -202,21 +230,23 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
 
 
 
+        //var downSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, DownInput>();
 
 
-
-        upSubscriber.Subscribe(inputLayerSO, i => {
+        holder.upSub.Subscribe(holder.inputLayerSO, i => {
             NextUpSelect();
         }).AddTo(bag);
 
-        downSubscriber.Subscribe(inputLayerSO, i => {
+        holder.downSub.Subscribe(holder.inputLayerSO, i => {
+            //Debug.Log("downMO");
+
             NextDownSelect();
         }).AddTo(bag);
-        enterSub.Subscribe(inputLayerSO, i => {
+        holder.enterSub.Subscribe(holder.inputLayerSO, i => {
             NextDownSelect();
         }).AddTo(bag);
 
-        selectDispSub.Subscribe(inputLayerSO, i =>
+        holder.selectDispSub.Subscribe(holder.inputLayerSO, i =>
         {
             UnselectThisComponent();
         }).AddTo(bag);
@@ -234,8 +264,8 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
 
         var bag = DisposableBag.CreateBuilder();
 
-        rightSubscriber.Subscribe(inputLayerSO, i => {
-            AddListNumOnFront();
+        holder.rightSub.Subscribe(holder.inputLayerSO, i => {
+            AddListNum();
             text.SetText(skillListHolderSO.mFrontSkillCatalog[listNum].GetSkillName());
 
             skillListHolderSO.mFrontSkillCatalog[listNum].skillTarget.SetTargetSort();
@@ -244,9 +274,9 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
 
         }).AddTo(bag);
 
-        leftSubscriber.Subscribe(inputLayerSO, i =>
+        holder.leftSub.Subscribe(holder.inputLayerSO, i =>
         {
-            DeductListNumOnFront();
+            DeductListNum();
             text.SetText(skillListHolderSO.mFrontSkillCatalog[listNum].GetSkillName());
 
             skillListHolderSO.mFrontSkillCatalog[listNum].skillTarget.SetTargetSort();
@@ -264,8 +294,8 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
 
         var bag = DisposableBag.CreateBuilder();
 
-        rightSubscriber.Subscribe(inputLayerSO, i => {
-            AddListNumOnBack();
+        holder.rightSub.Subscribe(holder.inputLayerSO, i => {
+            AddListNum();
             text.SetText(skillListHolderSO.mBackSkillCatalog[listNum].GetSkillName());
 
             skillListHolderSO.mBackSkillCatalog[listNum].skillTarget.SetTargetSort();
@@ -274,9 +304,9 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
             //Debug.Log(skillListHolderSO.mBackSkillCatalog[listNum].GetSkillName());
         }).AddTo(bag);
 
-        leftSubscriber.Subscribe(inputLayerSO, i =>
+        holder.leftSub.Subscribe(holder.inputLayerSO, i =>
         {
-            DeductListNumOnBack();
+            DeductListNum();
             text.SetText(skillListHolderSO.mBackSkillCatalog[listNum].GetSkillName());
 
             skillListHolderSO.mBackSkillCatalog[listNum].skillTarget.SetTargetSort();
@@ -337,6 +367,8 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
     
     public async void OnPointerClick(PointerEventData pointerEventData)
     {
+
+
         SelectThisComponent();
         if (currentPos == MovePosition.front)
         {
@@ -356,10 +388,10 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
     }
 
 
-    private void AddListNumOnFront()
+    private void AddListNum()
     {
-
-        if (skillListHolderSO.mFrontSkillCatalog.Count - 1 != listNum)
+        changePub.Publish(new MoveOptionChange());
+        if (listMax != listNum)
         {
             listNum++;
 
@@ -372,8 +404,9 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
 
     }
 
-    private void DeductListNumOnFront()
+    private void DeductListNum()
     {
+        changePub.Publish(new MoveOptionChange());
 
         if (listNum != 0)
         {
@@ -381,43 +414,16 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
         }
         else
         {
-            listNum = skillListHolderSO.mFrontSkillCatalog.Count - 1;
+            listNum = listMax;
         }
 
     }
 
-    private void AddListNumOnBack()
-    {
-
-        if (skillListHolderSO.mBackSkillCatalog.Count - 1 != listNum)
-        {
-            listNum++;
-
-        }
-        else
-        {
-            listNum = 0;
-
-        }
-
-    }
-
-    private void DeductListNumOnBack()
-    {
-
-        if (listNum != 0)
-        {
-            listNum--;
-        }
-        else
-        {
-            listNum = skillListHolderSO.mBackSkillCatalog.Count - 1;
-        }
-
-    }
 
     private void UnselectThisComponent()
     {
+        //Debug.Log("disp");
+
         disposableInput?.Dispose();
         disposableSkill?.Dispose();
         image.sprite = sourceImageSO.offSelect;
@@ -427,7 +433,7 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
     {
 
         UnselectThisComponent();
-        selectPublisher.Publish(new SelectMessage(inputLayerSO, upNum), new SelectChange());
+        selectPublisher.Publish(new SelectMessage(holder.inputLayerSO, upNum), new SelectChange());
 
     }
 
@@ -435,7 +441,7 @@ public class MoveOptionController : BaseSelectMessageHolder, IPointerEnterHandle
     {
         UnselectThisComponent();
 
-        selectPublisher.Publish(new SelectMessage(inputLayerSO, downNum), new SelectChange());
+        selectPublisher.Publish(new SelectMessage(holder.inputLayerSO, downNum), new SelectChange());
 
     }
 }

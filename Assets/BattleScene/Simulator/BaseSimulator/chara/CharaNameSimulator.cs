@@ -22,6 +22,9 @@ public class CharaNameSimulator : MonoBehaviour
     void Awake()
     {
         nameText = GetComponent<TMP_Text>();
+
+
+        
         prepareASub = GlobalMessagePipe.GetAsyncSubscriber<BattlePrepareMessage>();
         disposable = prepareASub.Subscribe(async (get, ct) =>
         {

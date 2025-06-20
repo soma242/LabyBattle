@@ -18,13 +18,17 @@ using SkillStruct;
 [CreateAssetMenu(menuName = "MessageableSO/Component/Formation/Enemy")]
 public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
 {
-    public MSO_EnemyData enemy;
+    public EnemyData enemy;
+
+    [SerializeField]
+    private MSO_FormationMessageHolderSO messages;
 
     private int skillNum;
    // private int skillKey;
 
     private int targetRate;
     private sbyte targetForm;
+
 
     private int totalWeight;
 
@@ -40,11 +44,7 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
 
     private IPublisher<sbyte, SetEnemyImage> setImagePub;
 
-    private System.IDisposable disposable;
-    private System.IDisposable disposableOnDestroy;
-    private System.IDisposable disposableOnExclusion;
-    private System.IDisposable disposableTarget;
-    private System.IDisposable disposableTaunt;
+
 
 
     private IAsyncSubscriber<EnemyActionSetMessage> actionSetASub;
@@ -70,7 +70,12 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
     private System.IDisposable disposableTiming;
     private System.IDisposable disposableActiveAttention;
 
-
+    private System.IDisposable disposable;
+    private System.IDisposable disposableOnDestroy;
+    private System.IDisposable disposableOnExclusion;
+    private System.IDisposable disposableTarget;
+    private System.IDisposable disposableTaunt;
+    private System.IDisposable disposableState;
 
 
 
@@ -134,16 +139,14 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
         formPreASub.Subscribe(async(get,ct) =>
         {
             disposableOnExclusion?.Dispose();
-            if (enemy != null)
+            if (participant)
             {
-                participant = true;
                 currentHP = enemy.GetMaxHP();
                 setImagePub.Publish(GetFormNum(), new SetEnemyImage());
                 await PrepareBattleSub(ct);
             }
             else
             {
-                participant = false;
                 PrepareWatchingSub();
             }
         }).AddTo(bag);
@@ -156,8 +159,22 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
 
         }).AddTo(bag);
         */
+        var endSub = GlobalMessagePipe.GetSubscriber<BattleFinishMessage>();
 
-        
+        endSub.Subscribe(get =>
+        {
+            //participant = false;
+
+            //戦闘終了時に戦闘に関するSubを全て開放
+            disposableActiveAttention?.Dispose();
+            disposableOnExclusion?.Dispose();
+            disposableTarget?.Dispose();
+            disposableTaunt?.Dispose();
+            disposableTiming?.Dispose();
+            disposableState?.Dispose();
+        }).AddTo(bag);
+
+
 
         disposableOnDestroy = bag.Build();
     }
@@ -165,18 +182,11 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
 
     private async UniTask PrepareBattleSub(CancellationToken thisCt)
     {
-        disposableOnExclusion?.Dispose();
-        disposableTaunt?.Dispose();
-        disposableTarget?.Dispose();
-        disposableTiming?.Dispose();
+        BattleDisposableDispose();
 
         var bag = DisposableBag.CreateBuilder();
 
-        prepareASub.Subscribe(async(get,ct) =>
-        {
-            totalWeight = enemy.skillCatalog.GetTotalSkillWeight();
-            //Debug.Log(totalWeight);
-        }).AddTo(bag);
+
         /*
         turnStartASub.Subscribe(async(get, ct) =>
         {
@@ -199,7 +209,7 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
         //ターン開始直後にエネミーの行動を決定する。
         actionSetASub.Subscribe(async (get, ct) =>
         {
-
+            //Debug.Log("actionSet");
             //ホルダー内での配列番号
             //var i = Mathf.RoundToInt(totalWeight * Random.value);
             //Debug.Log(i);
@@ -332,10 +342,7 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
 
     private void PrepareWatchingSub()
     {
-        disposableOnExclusion?.Dispose();
-        disposableTaunt?.Dispose();
-        disposableTarget?.Dispose();
-        disposableTiming?.Dispose();
+        BattleDisposableDispose();
 
 
 
@@ -382,6 +389,7 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
             currentHP -= damage;
             damageNoticePub.Publish(new DamageNoticeMessage(false, get.activePos.target, damage));
 
+            CheckContinuation();
 
         }).AddTo(bag);
         normalMagicDamageSub.Subscribe(form, get=>
@@ -401,14 +409,20 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
     public int NormalPDamage(float damage)
     {
         float actualDamage = damage - GetActualDefence();
-        actualDamage *= effects.GetPosture();
+        if (effects.breakePosture.valid)
+        {
+            actualDamage *= 1.5f;
+        }
         return Mathf.FloorToInt(actualDamage);
     }
     public int NormalMDamage(float damage)
     {
+        //Debug.Log()
         float actualDamage = damage - GetActualMagicDefence();
-        actualDamage *= effects.GetPosture();
-
+        if (effects.breakePosture.valid)
+        {
+            actualDamage *= 1.5f;
+        }
         return Mathf.FloorToInt(actualDamage);
     }
 
@@ -451,12 +465,37 @@ public class MSO_FormationEnemySO : MSO_FormationBaseMSO, IGetFormationInfo
         return (float)currentHP / (float)enemy.GetMaxHP();
     }
     //
+    
+    public void SetEnemy(EnemyData enemy)
+    {
+        participant = true;
+        this.enemy = enemy;
+        totalWeight = enemy.skillCatalog.GetTotalSkillWeight();
 
+        disposableState?.Dispose();
+        var bagState = DisposableBag.CreateBuilder();
+        enemy.SetStateSub(GetFormNum(), bagState, effects);
+        disposableState = bagState.Build();
+    }
+
+    public void NotSetEnemy()
+    {
+        participant = false;
+    }
+
+    private void BattleDisposableDispose()
+    {
+        disposableActiveAttention?.Dispose();
+        disposableOnExclusion?.Dispose();
+        disposableTarget?.Dispose();
+        disposableTaunt?.Dispose();
+        disposableTiming?.Dispose();
+    }
 
     //ダメージ時にHPが残っているかの判定を行う
     private void CheckContinuation()
     {
-        if (currentHP < 0)
+        if (currentHP < 1)
         {
             participant = false;
             PrepareWatchingSub();

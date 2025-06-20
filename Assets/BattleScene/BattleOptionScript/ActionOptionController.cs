@@ -21,7 +21,7 @@ using SkillStruct;
 
 using UnityEngine.EventSystems;
 
-public class ActionOptionController : BaseSelectMessageHolder, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
+public class ActionOptionController : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
     private int listNum;
 
@@ -31,15 +31,19 @@ public class ActionOptionController : BaseSelectMessageHolder, IPointerEnterHand
     private TMP_Text text;
 
     //自分の識別番号と自分からつながる識別番号
-    [SerializeField]
-    private int myNum;
+
     [SerializeField]
     private int upNum;
+    [SerializeField]
+    private int myNum;
     [SerializeField]
     private int downNum;
 
     [SerializeField]
     private SelectSourceImageSO sourceImageSO;
+
+    [SerializeField]
+    private BaseSelectMessageHolder holder;
 
     //アタッチされたオブジェクトのイメージ
     private Image image;
@@ -68,13 +72,14 @@ public class ActionOptionController : BaseSelectMessageHolder, IPointerEnterHand
     private IPublisher<BookCommonActiveKeyMessage> bookKeyPub;
 
 
+    private System.IDisposable disposableInput;
 
     //Input受け入れ用MessagePipe
 
 
 
     //関数
-     void Awake()
+    void Awake()
     {
         image = GetComponent<Image>();
 
@@ -97,7 +102,7 @@ public class ActionOptionController : BaseSelectMessageHolder, IPointerEnterHand
 
         var bag = DisposableBag.CreateBuilder();
 
-        selectSubscriber.Subscribe(new SelectMessage(inputLayerSO, myNum), i =>
+        selectSubscriber.Subscribe(new SelectMessage(holder.inputLayerSO, myNum), i =>
         {
             SelectThisComponent();
         }).AddTo(bag);
@@ -123,13 +128,14 @@ public class ActionOptionController : BaseSelectMessageHolder, IPointerEnterHand
 
     void OnDestroy()
     {
-        disposableOnDestroy.Dispose();
+        disposableOnDestroy?.Dispose();
+        disposableInput?.Dispose();
     }
 
     private async UniTask SelectThisComponent()
     {
-
-        selectDispPub.Publish(inputLayerSO, new DisposeSelect());
+        //Debug.Log("AOSelect");
+        holder.selectDispPub.Publish(holder.inputLayerSO, new DisposeSelect());
 
         //現在走っているPublishを受け入れないために1frame待つ
         await UniTask.NextFrame();
@@ -139,26 +145,26 @@ public class ActionOptionController : BaseSelectMessageHolder, IPointerEnterHand
         var bag = DisposableBag.CreateBuilder();
 
 
+        //Debug.Log("selectedAOC");
 
 
-
-        upSubscriber.Subscribe(inputLayerSO, i => {
+        holder.upSub.Subscribe(holder.inputLayerSO, i => {
             NextUpSelect();
         }).AddTo(bag);
 
-        downSubscriber.Subscribe(inputLayerSO, i => {
+        holder.downSub.Subscribe(holder.inputLayerSO, i => {
             NextDownSelect();
         }).AddTo(bag);
-        enterSub.Subscribe(inputLayerSO, i => {
+        holder.enterSub.Subscribe(holder.inputLayerSO, i => {
             NextDownSelect();
         }).AddTo(bag);
 
-        selectDispSub.Subscribe(inputLayerSO, get =>
+        holder.selectDispSub.Subscribe(holder.inputLayerSO, get =>
         {
             UnselectThisComponent();
         }).AddTo(bag);
 
-        rightSubscriber.Subscribe(inputLayerSO, i => {
+        holder.rightSub.Subscribe(holder.inputLayerSO, i => {
             AddListNum();
             text.SetText(skillListHolderSO.aSkillCatalog[listNum].GetSkillName());
             //text.SetText($"aiueo{FormationScope.FrontCharaText()}");
@@ -169,7 +175,7 @@ public class ActionOptionController : BaseSelectMessageHolder, IPointerEnterHand
 
         }).AddTo(bag);
 
-        leftSubscriber.Subscribe(inputLayerSO, i =>
+        holder.leftSub.Subscribe(holder.inputLayerSO, i =>
         {
             DeductListNum();
             text.SetText(skillListHolderSO.aSkillCatalog[listNum].GetSkillName());
@@ -270,16 +276,16 @@ public class ActionOptionController : BaseSelectMessageHolder, IPointerEnterHand
     private void NextUpSelect()
     {
 
-        UnselectThisComponent();
-        selectPublisher.Publish(new SelectMessage(inputLayerSO, upNum), new SelectChange());
+        //UnselectThisComponent();
+        selectPublisher.Publish(new SelectMessage(holder.inputLayerSO, upNum), new SelectChange());
 
     }
 
     private void NextDownSelect()
     {
-        UnselectThisComponent();
+        //UnselectThisComponent();
 
-        selectPublisher.Publish(new SelectMessage(inputLayerSO, downNum), new SelectChange());
+        selectPublisher.Publish(new SelectMessage(holder.inputLayerSO, downNum), new SelectChange());
 
     }
 }

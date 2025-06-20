@@ -6,8 +6,7 @@ using UnityEngine.UI;
 using TMPro;
 
 using MessagePipe;
- using VContainer;
-using VContainer.Unity;
+using SkillStruct;
 using BattleSceneMessage;
 
 using Cysharp.Text;
@@ -46,7 +45,7 @@ public class BattleLogController : MonoBehaviour
 
     //private IAsyncSubscriber<ActionSelectEndMessage> selectEndASub;
 
-    [Inject] private readonly ISubscriber<InputLayerSO, ScrollInput> scrollSub;
+    private ISubscriber<InputLayerSO, ScrollInput> scrollSub;
 
     private ISubscriber<NewLogSizeMessage> sizeSub;
 
@@ -63,6 +62,9 @@ public class BattleLogController : MonoBehaviour
 
     Utf16PreparedFormat<string, int> damageLog = ZString.PrepareUtf16<string, int>("{0}Ç…{1}ÇÃÉ_ÉÅÅ[ÉW");
     Utf16PreparedFormat<string> knockOutLog = ZString.PrepareUtf16<string>("{0}Ç™ì|ÇÍÇΩ");
+    Utf16PreparedFormat<string> breakPostureLog = ZString.PrepareUtf16<string>("{0}ÇÃëÃê®Ç™ïˆÇÍÇΩ");
+
+    Utf16PreparedFormat<string, string> buffLog = ZString.PrepareUtf16<string, string>("{0}ÇÃ{1}Ç™è„è∏ÇµÇΩ");
 
     void Awake()
     {
@@ -74,6 +76,8 @@ public class BattleLogController : MonoBehaviour
 
         sizeSub = GlobalMessagePipe.GetSubscriber<NewLogSizeMessage>();
 
+
+        scrollSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, ScrollInput>();
 
         layerChangeSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, InputLayerChanged>();
 
@@ -149,6 +153,7 @@ public class BattleLogController : MonoBehaviour
 
 
     //ÉçÉOÇÃéÛêMÇà»â∫ÇÃìÒÇ¬ÇÃä÷êîÇ≈çsÇ§
+    //ëoï˚Ç…ìoò^ÇçsÇ§
     private void SetCreateLogSub()
     {
         var bag = DisposableBag.CreateBuilder();
@@ -176,6 +181,26 @@ public class BattleLogController : MonoBehaviour
 
         }).AddTo(bag);
 
+        var buffSub = GlobalMessagePipe.GetSubscriber<BuffNoticeMessage>();
+        buffSub.Subscribe(info =>
+        {
+            var obj = Instantiate(battleLog, transform, false);
+            //obj.transform.SetParent(transform);
+
+            //var text = obj.GetComponent<TMP_Text>();
+            var comp = obj.GetComponent<BattleLogComponent>();
+            comp.SetReference();
+            if (info.chara)
+            {
+                switch (info.type)
+                {
+                    case (BuffType.attack):
+                        comp.InstantiateThisComp(buffLog.Format(GetCharaName(info.target), EffectsString.AttackString));
+                        break;
+                }
+            }
+        }).AddTo(bag);
+
         var dropEnemySub = GlobalMessagePipe.GetSubscriber<DropEnemyMessage>();
         dropEnemySub.Subscribe(get =>
         {
@@ -200,10 +225,23 @@ public class BattleLogController : MonoBehaviour
             comp.InstantiateThisComp(knockOutLog.Format(GetCharaName(get.pos)));
         }).AddTo(bag);
 
+        var enemyBreakSub = GlobalMessagePipe.GetSubscriber<BreakPostureSuccessEnemy>();
+        enemyBreakSub.Subscribe(get =>
+        {
+            var obj = Instantiate(battleLog, transform, false);
+            //obj.transform.SetParent(transform);
+
+            //var text = obj.GetComponent<TMP_Text>();
+            var comp = obj.GetComponent<BattleLogComponent>();
+            comp.SetReference();
+            comp.InstantiateThisComp(breakPostureLog.Format(GetEnemyName(get.pos)));
+        }).AddTo(bag);
+
 
         disposableNewLog = bag.Build();
     }
 
+ 
     private void SetEnableLogSub()
     {
         var bag = DisposableBag.CreateBuilder();
@@ -228,6 +266,43 @@ public class BattleLogController : MonoBehaviour
             //text.SetText(damageLog.Format(get.name, get.damage));
 
         }).AddTo(bag);
+
+        var buffSub = GlobalMessagePipe.GetSubscriber<BuffNoticeMessage>();
+        buffSub.Subscribe(info =>
+        {
+
+            logComp.SetReference();
+            if (info.chara)
+            {
+                switch (info.type)
+                {
+                    case (BuffType.attack):
+                        logComp.InstantiateThisComp(buffLog.Format(GetCharaName(info.target), EffectsString.AttackString));
+                        break;
+                }
+            }
+        }).AddTo(bag);
+
+        var dropEnemySub = GlobalMessagePipe.GetSubscriber<DropEnemyMessage>();
+        dropEnemySub.Subscribe(get =>
+        {
+            logComp.InstantiateThisComp(knockOutLog.Format(GetEnemyName(get.pos)));
+        }).AddTo(bag);
+
+        var dropCharaSub = GlobalMessagePipe.GetSubscriber<DropCharaMessage>();
+        dropCharaSub.Subscribe(get =>
+        {
+
+            logComp.InstantiateThisComp(knockOutLog.Format(GetCharaName(get.pos)));
+        }).AddTo(bag);
+
+        var enemyBreakSub = GlobalMessagePipe.GetSubscriber<BreakPostureSuccessEnemy>();
+        enemyBreakSub.Subscribe(get =>
+        {
+            logComp.InstantiateThisComp(breakPostureLog.Format(GetEnemyName(get.pos)));
+        }).AddTo(bag);
+
+
 
         disposableNewLog = bag.Build();
     }

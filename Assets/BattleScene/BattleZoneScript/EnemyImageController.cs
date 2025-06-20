@@ -24,13 +24,17 @@ public class EnemyImageController : MonoBehaviour
         image = GetComponent<Image>();
         setImageSub = GlobalMessagePipe.GetSubscriber<sbyte, SetEnemyImage>();
 
-        disposable = setImageSub.Subscribe(formationSO.GetFormNum(), get =>
+        var bag = DisposableBag.CreateBuilder();
+
+        setImageSub.Subscribe(formationSO.GetFormNum(), get =>
         {
+            var canvas = GetComponent<Canvas>();
+            canvas.enabled = true;
             image.sprite = formationSO.enemy.enemyImage.battleImage;
 
-        });
+        }).AddTo(bag);
 
-
+        disposable = bag.Build();
     }
 
     void OnDestroy()

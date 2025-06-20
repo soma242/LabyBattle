@@ -8,8 +8,7 @@ using SkillStruct;
 [CreateAssetMenu(menuName = "activeSkill/skillTarget/FrontChara")]
 public class MSO_AllFrontCharaTargetSO : MSO_ActiveSkillTargetSO
 {
-    private IPublisher<Active_FrontCharaTarget> targetPub;
-    private IPublisher<EnemyTargetingAllFrontChara> enemyTargetPub;
+
 
     /*
     public override void MessageStart()

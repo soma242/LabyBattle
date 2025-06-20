@@ -5,51 +5,63 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 using MessagePipe;
-using VContainer;
-using VContainer.Unity;
+
 
 using BattleSceneMessage;
 
-
+/*
 //InputSystemからMessagePipeを起動する。
 //イベントを追加後インスペクターからPlayerInputに追加を行う。
 
 public class InputSysetemOfBattleScene : MonoBehaviour
 {
 
-    [Inject] private readonly IPublisher<InputLayerSO, RightInput> _RightInputPublisher;
-    [Inject] private readonly IPublisher<InputLayerSO, LeftInput> _LeftInputPublisher;
-    [Inject] private readonly IPublisher<InputLayerSO, UpInput> _UpInputPublisher;
-    [Inject] private readonly IPublisher<InputLayerSO, DownInput> _DownInputPublisher;
-    [Inject] private readonly IPublisher<InputLayerSO, EnterInput> _EnterInputPublisher;
-    [Inject] private readonly IPublisher<InputLayerSO, CancelInput> _CancelInputPublisher;
+    private IPublisher<InputLayerSO, RightInput> rightPub;
+    private IPublisher<InputLayerSO, LeftInput> leftPub;
+    private IPublisher<InputLayerSO, UpInput> upPub;
+    private IPublisher<InputLayerSO, DownInput> downPub;
+    private IPublisher<InputLayerSO, EnterInput> enterPub;
+    private IPublisher<InputLayerSO, CancelInput> cancelPub;
 
-    [Inject] private readonly IPublisher<InputLayerSO, ScrollInput> _ScrolllInputPublisher;
-
-
-
-    [Inject] private readonly IPublisher<Holdout> holdoutPub;
+    private IPublisher<InputLayerSO, ScrollInput> scrollPub;
 
 
-    //[Inject] private readonly ISubscriber<DownHolding> downHoldSub;
+
+    private IPublisher<Holdout> holdoutPub;
+
+
+    //private ISubscriber<DownHolding> downHoldSub;
 
     
-    //[Inject] private readonly IPublisher<RightInput> RightInputPublisher;
+    //private IPublisher<RightInput> RightInputPublisher;
 
     //[SerializeField]
-    private CurrentInputLayerOfBattleScene currentInputLayerOfBattleScene;
+    private InputLayerHolder currentInputLayerOfBattleScene;
 
     void Awake()
     {
-        currentInputLayerOfBattleScene = GetComponent<CurrentInputLayerOfBattleScene>();
+        currentInputLayerOfBattleScene = GetComponent<InputLayerHolder>();
+
+        rightPub = GlobalMessagePipe.GetPublisher<InputLayerSO, RightInput>();
+        leftPub = GlobalMessagePipe.GetPublisher<InputLayerSO, LeftInput>();
+        upPub = GlobalMessagePipe.GetPublisher<InputLayerSO, UpInput>();
+        downPub = GlobalMessagePipe.GetPublisher<InputLayerSO, DownInput>();
+        enterPub = GlobalMessagePipe.GetPublisher<InputLayerSO, EnterInput>();
+        cancelPub = GlobalMessagePipe.GetPublisher<InputLayerSO, CancelInput>();
+
+        scrollPub = GlobalMessagePipe.GetPublisher<InputLayerSO, ScrollInput>();
+
+        holdoutPub = GlobalMessagePipe.GetPublisher<Holdout>();
+
     }
+
 
 
     public void RightInput(InputAction.CallbackContext context)
     {
         if(context.phase == InputActionPhase.Performed)
         {
-            _RightInputPublisher.Publish(currentInputLayerOfBattleScene.inputLayerSO, new RightInput());
+            rightPub.Publish(currentInputLayerOfBattleScene.inputLayerSO, new RightInput());
 
             //RightInputPublisher.Publish(new RightInput());
         }else if(context.phase == InputActionPhase.Canceled)
@@ -62,7 +74,7 @@ public class InputSysetemOfBattleScene : MonoBehaviour
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            _LeftInputPublisher.Publish(currentInputLayerOfBattleScene.inputLayerSO, new LeftInput());
+            leftPub.Publish(currentInputLayerOfBattleScene.inputLayerSO, new LeftInput());
         }
         else if (context.phase == InputActionPhase.Canceled)
         {
@@ -74,7 +86,7 @@ public class InputSysetemOfBattleScene : MonoBehaviour
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            _UpInputPublisher.Publish(currentInputLayerOfBattleScene.inputLayerSO, new UpInput());
+            upPub.Publish(currentInputLayerOfBattleScene.inputLayerSO, new UpInput());
         }
         else if (context.phase == InputActionPhase.Canceled)
         {
@@ -86,7 +98,7 @@ public class InputSysetemOfBattleScene : MonoBehaviour
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            _DownInputPublisher.Publish(currentInputLayerOfBattleScene.inputLayerSO, new DownInput());
+            downPub.Publish(currentInputLayerOfBattleScene.inputLayerSO, new DownInput());
         }
         else if (context.phase == InputActionPhase.Canceled)
         {
@@ -99,7 +111,7 @@ public class InputSysetemOfBattleScene : MonoBehaviour
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            _EnterInputPublisher.Publish(currentInputLayerOfBattleScene.inputLayerSO, new EnterInput());
+            enterPub.Publish(currentInputLayerOfBattleScene.inputLayerSO, new EnterInput());
         }
         else if (context.phase == InputActionPhase.Canceled)
         {
@@ -111,7 +123,7 @@ public class InputSysetemOfBattleScene : MonoBehaviour
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            _CancelInputPublisher.Publish(currentInputLayerOfBattleScene.inputLayerSO, new CancelInput());
+            cancelPub.Publish(currentInputLayerOfBattleScene.inputLayerSO, new CancelInput());
         }
     }
     
@@ -121,9 +133,10 @@ public class InputSysetemOfBattleScene : MonoBehaviour
         {
             //context
             //{ action=BattleScene/WheelUp[/Mouse/scroll] phase=Performed time=5.32974370000011 control=Delta:/Mouse/scroll value=(0.00, -120.00) interaction= }
-            _ScrolllInputPublisher.Publish(currentInputLayerOfBattleScene.inputLayerSO, new ScrollInput(context.ReadValue<Vector2>().y));
+            scrollPub.Publish(currentInputLayerOfBattleScene.inputLayerSO, new ScrollInput(context.ReadValue<Vector2>().y));
 
             //_CancelInputPublisher.Publish(currentInputLayerOfBattleScene.inputLayerSO, new CancelInput());
         }
     }
 }
+*/

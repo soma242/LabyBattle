@@ -25,17 +25,17 @@ public class MSO_PassiveSkillHolderSO : MSO_SkillHolderSO
     */
 
 
-    public override void RegistThisSkill(sbyte formNum)
+    public override void RegistThisSkill(sbyte formNum, DisposableBagBuilder bag)
     {
         if (registed)
         {
             return;
         }
         registed = true;
-        disposable = registFinishSub.Subscribe(get =>
+        registFinishSub.Subscribe(get =>
         {
             registed = false;
-        });
+        }).AddTo(bag);
         skillEffectSO.RegistThisSkill(formNum);
     }
 

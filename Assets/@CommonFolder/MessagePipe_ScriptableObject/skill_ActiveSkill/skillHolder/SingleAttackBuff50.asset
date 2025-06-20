@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1b1bc71a30150c49aa697b41f8dbf8a, type: 3}
+  m_Name: SingleAttackBuff50
+  m_EditorClassIdentifier: 
+  skillName: "\u653B\u6483\u529B\u4E0A\u6607\uFF08\u5358\u4F53\uFF09"
+  description: "1T\u306E\u9593\u5473\u65B9\u4E00\u4EBA\u306E\u653B\u6483\u529B50%\u4E0A\u6607"
+  skillTiming: {fileID: 11400000, guid: 142e17ede3caee44bb38866146f62f93, type: 2}
+  skillEffectSO: {fileID: 11400000, guid: be51f4b023ae90042bfb5e03402502a8, type: 2}
+  skillTarget: {fileID: 11400000, guid: ebcb830bebcad9e4c9a9cbe6d6ebb8e4, type: 2}

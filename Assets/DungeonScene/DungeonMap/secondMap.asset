@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60edb0d544b9bca47b3e0317c70a472a, type: 3}
+  m_Name: secondMap
+  m_EditorClassIdentifier: 
+  mapKey: 1
+  vertical:
+  - horizontal: 0000000000000000
+  - horizontal: 0001010000010100
+  - horizontal: 0001010000010000
+  - horizontal: 0000010000010100
+  - horizontal: 0000010000000100
+  - horizontal: 0000010101000100
+  - horizontal: 0000000001010100
+  - horizontal: 0000000000000000
+  addition:
+  - valid: 1
+    comp: {fileID: 11400000, guid: 1517f032a1d2b764a8ac7c55759857e3, type: 2}
+    pos:
+      x: 1
+      y: 1
+  - valid: 1
+    comp: {fileID: 11400000, guid: ab385ed9714f6834ea24c2fa6cd88368, type: 2}
+    pos:
+      x: 6
+      y: 1
+  encountReference: {fileID: 11400000, guid: af2f16e91fd9f7f4286393fbe9628e6d, type: 2}
+  firstly: 1
+  newGame: 1

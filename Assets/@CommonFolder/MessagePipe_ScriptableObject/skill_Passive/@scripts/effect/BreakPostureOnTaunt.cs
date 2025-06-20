@@ -21,8 +21,8 @@ public class BreakPostureOnTauntComponent
     public BreakPostureOnTauntComponent(sbyte formNum)
     {
         this.formNum = formNum;
-        Debug.Log("construct");
-        temp();
+        //Debug.Log("construct");
+        //temp();
 
         var bag = DisposableBag.CreateBuilder();
 
@@ -35,7 +35,7 @@ public class BreakPostureOnTauntComponent
         unregistSub.Subscribe(formNum, get =>
         {
             disposableRegist?.Dispose();
-            Debug.Log("dispo");
+            //Debug.Log("dispo");
         }).AddTo(bag);
 
         passiveStartSub.Subscribe(get =>
@@ -48,7 +48,7 @@ public class BreakPostureOnTauntComponent
 
             tauntSuccessSub.Subscribe(formNum, get =>
             {
-                Debug.Log(formNum);
+                //Debug.Log(formNum);
                 var breakePub = GlobalMessagePipe.GetPublisher<sbyte, BreakePostureMessage>();
                 breakePub.Publish(get.target, new BreakePostureMessage());
             }).AddTo(bag);
@@ -60,18 +60,22 @@ public class BreakPostureOnTauntComponent
             }).AddTo(bag);
 
             disposableBoot = bag.Build();
-            Debug.Log("subing");
+            //Debug.Log("subing");
         }).AddTo(bag);
 
 
         disposableRegist = bag.Build();
     }
 
+    /*
      ~BreakPostureOnTauntComponent()
     {
-        Debug.Log("finalize");
+        //Debug.Log("finalize");
     }
+    */
 
+    //è„ãLÇ∆ÇŸÇ⁄ìØÇ∂Ç»ÇÃÇ≈ëΩï™ébéûóp
+    /*
     private void temp()
     {
         var tauntSuccessSub = GlobalMessagePipe.GetSubscriber<sbyte, TauntSuccessMessage>();
@@ -93,8 +97,9 @@ public class BreakPostureOnTauntComponent
         }).AddTo(bag);
 
         disposableBoot = bag.Build();
-        Debug.Log("subing");
+        //Debug.Log("subing");
     }
+    */
 }
 
 

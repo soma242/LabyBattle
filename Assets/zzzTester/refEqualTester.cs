@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class refEqualTester : MonoBehaviour
 {
-    [SerializeField] private MSO_CharacterDataSO charaData;
+    [SerializeField] private CharacterDataSO charaData;
 
     void Start()
     {
-        charaData.FormingChara(1);
+        //charaData.FormingChara(1);
         Debug.Log("testStart");
     }
 }

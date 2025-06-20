@@ -24,7 +24,7 @@ public class MSO_ActiveSkillHolderSO : MSO_SkillHolderSO
     }
     */
 
-    public override void RegistThisSkill(sbyte formNum)
+    public override void RegistThisSkill(sbyte formNum, DisposableBagBuilder bag)
     {
         var registPub = GlobalMessagePipe.GetPublisher<sbyte, RegistActiveSkill>();
         if (registed)
@@ -33,10 +33,10 @@ public class MSO_ActiveSkillHolderSO : MSO_SkillHolderSO
         }
         //Debug.Log(this.name);
         registed = true;
-        disposable = registFinishSub.Subscribe(get =>
+        registFinishSub.Subscribe(get =>
         {
             registed = false;
-        });
+        }).AddTo(bag);
         registPub.Publish(formNum, new RegistActiveSkill(this));
     }
 

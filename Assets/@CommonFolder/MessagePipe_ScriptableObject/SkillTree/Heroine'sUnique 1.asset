@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cca13f379ef4f145b9174984627380c, type: 3}
   m_Name: Heroine'sUnique 1
   m_EditorClassIdentifier: 
-  treeName: "\u56FA\u6709\u30C4\u30EA\u30FC"
+  treeName: "MagicAttacker\u56FA\u6709\u30C4\u30EA\u30FC"
   skillCatalog:
   - {fileID: 11400000, guid: 60cb6e7ac293ffa4fabe80428336c8a2, type: 2}

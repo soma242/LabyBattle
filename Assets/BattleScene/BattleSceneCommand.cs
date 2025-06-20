@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using MessagePipe;
-using VContainer;
-using VContainer.Unity;
+
 
 using System;
 using System.Threading;
@@ -65,8 +64,8 @@ public class BattleSceneCommand : MonoBehaviour
     private ISubscriber<BattleStartMessage> startSub;
     private IAsyncPublisher<FormationPrepareMessage> formPreAPub;
     private IAsyncPublisher<BattlePrepareMessage> prepareAPub;
-    private IPublisher<BattleFinishMessage> endPub;
-    private ISubscriber<BattleFinishMessage> endSub;
+    private IAsyncPublisher<BattleFinishMessage> endPub;
+    private IAsyncSubscriber<BattleFinishMessage> endSub;
 
     private IAsyncPublisher<TurnStartMessage> turnStartAPub;
     private IAsyncPublisher<EnemyActionSetMessage> enemyActionSetAPub;
@@ -97,8 +96,8 @@ public class BattleSceneCommand : MonoBehaviour
         prepareAPub = GlobalMessagePipe.GetAsyncPublisher<BattlePrepareMessage>();
 
         //まだ実装してない。
-        endPub = GlobalMessagePipe.GetPublisher<BattleFinishMessage>();
-        endSub = GlobalMessagePipe.GetSubscriber<BattleFinishMessage>();
+        endPub = GlobalMessagePipe.GetAsyncPublisher<BattleFinishMessage>();
+        endSub = GlobalMessagePipe.GetAsyncSubscriber<BattleFinishMessage>();
 
         turnStartAPub = GlobalMessagePipe.GetAsyncPublisher<TurnStartMessage>();
         enemyActionSetAPub = GlobalMessagePipe.GetAsyncPublisher<EnemyActionSetMessage>();
@@ -122,12 +121,14 @@ public class BattleSceneCommand : MonoBehaviour
         {
             try
             {
+
                 BattleCommand(cts.Token);
 
             }
             catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token)
             {
 #if UNITY_EDITOR
+                Debug.Log("cancel perfome");
                         if (cts.IsCancellationRequested)
                         {
                             // 引数のCancellationTokenが原因なので、それを保持したOperationCanceledExceptionとして投げる
@@ -154,35 +155,46 @@ public class BattleSceneCommand : MonoBehaviour
 
         allDownCharaSub.Subscribe(get =>
         {
-            endPub.Publish(new BattleFinishMessage());
+            BattleEnd();
         }).AddTo(bag);
         allDownEnemySub.Subscribe(get =>
         {
-            endPub.Publish(new BattleFinishMessage());
-
+            BattleEnd();
         }).AddTo(bag);
 
-        endSub.Subscribe(get =>
+        endSub.Subscribe(async (get,ct) =>
         {
-            cts.Cancel();
-            disposable.Dispose();
+            cts?.Cancel();
+            disposable?.Dispose();
             Debug.Log("battleFinish");
+
+
+
         }).AddTo(bag);
 
 
         disposable = bag.Build();
     }
+    void OnDestroy()
+    {
+        cts?.Cancel();
 
+        disposable?.Dispose();
+
+    }
 
 
     private async UniTask BattleCommand(CancellationToken ct)
     {
+        //Debug.Log("start");
+
         //キャラと敵のFormationがそれぞれ編成されているか確認
         await formPreAPub.PublishAsync(new FormationPrepareMessage());
 
 
 
         //バトル開始時の処理（初期値に更新など）
+        //Debug.Log("prepareStart");
         await prepareAPub.PublishAsync(new BattlePrepareMessage());
 
         //バトル中に発動するパッシブスキルのSub開始
@@ -241,7 +253,8 @@ public class BattleSceneCommand : MonoBehaviour
 
             //Debug.Log(this.name);
 
-
+            var resetSimuPub = GlobalMessagePipe.GetPublisher<AllSimulateRestMessage>();
+            resetSimuPub.Publish(new AllSimulateRestMessage());
             //ターン終了
             await turnEndAPub.PublishAsync(new TurnEndMessage());
         } while (battleContinue);
@@ -249,19 +262,20 @@ public class BattleSceneCommand : MonoBehaviour
     }
 
 
-    
+    private async UniTask BattleEnd()
+    {
+        await endPub.PublishAsync(new BattleFinishMessage());
 
-
-
-
-
-
-    private void OnDestroy()
-    { 
-        cts.Cancel();
-
-        disposable.Dispose();
+        var sceneEndPub = GlobalMessagePipe.GetPublisher<EndBattleSceneMessage>();
+        sceneEndPub.Publish(new EndBattleSceneMessage());
     }
+
+
+
+
+
+
+
 
 
 }

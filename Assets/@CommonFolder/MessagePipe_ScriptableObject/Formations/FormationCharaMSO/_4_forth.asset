@@ -15,6 +15,7 @@ MonoBehaviour:
   formNumSO: {fileID: 11400000, guid: 4bfb91c2ec5933e40bd6cb4699c0eec1, type: 2}
   participant: 1
   setChara: {fileID: 11400000, guid: 4a655b2d10b0dac4b8a2c030fca27231, type: 2}
+  messages: {fileID: 11400000, guid: 08f90f48ad50e164ca56dcab1600b6e8, type: 2}
   skillListHolderSO: {fileID: 11400000, guid: e9061fe8af0da96478cd908cf8dff9df, type: 2}
   currentPos: 1
   firstPos: 1

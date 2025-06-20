@@ -16,7 +16,7 @@ public class MoveSkillOnFrontHolderSO : MSO_SkillHolderSO
     //private IPublisher<sbyte, RegistMoveSkillOnFront> registPub;
 
 
-    public override void RegistThisSkill(sbyte formNum)
+    public override void RegistThisSkill(sbyte formNum, DisposableBagBuilder bag)
     {
         var registPub = GlobalMessagePipe.GetPublisher<sbyte, RegistMoveSkillOnFront>();
 
@@ -26,10 +26,10 @@ public class MoveSkillOnFrontHolderSO : MSO_SkillHolderSO
         }
 
         registed = true;
-        disposable = registFinishSub.Subscribe(get =>
+        registFinishSub.Subscribe(get =>
         {
             registed = false;
-        });
+        }).AddTo(bag);
         registPub.Publish(formNum, new RegistMoveSkillOnFront(this));
     }
 

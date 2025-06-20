@@ -17,7 +17,7 @@ public class MSO_SkillHolderSO : MessageableScriptableObject
 
     protected ISubscriber<RegistSkillFinish> registFinishSub;
 
-    protected System.IDisposable disposable;
+    //protected System.IDisposable disposable;
 
 
     public override void MessageStart()
@@ -37,7 +37,7 @@ public class MSO_SkillHolderSO : MessageableScriptableObject
         return description;
     }
 
-    public virtual void RegistThisSkill(sbyte formNum)
+    public virtual void RegistThisSkill(sbyte formNum, DisposableBagBuilder bag)
     {
 
     }

@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b204e28345c6b8b4d861fb5e848dce59, type: 3}
+  m_Name: ActiveSkillEffectCommander
+  m_EditorClassIdentifier: 
+  activeCatalog:
+  - {fileID: 11400000, guid: 05f8faf26bcf6604eb0717371d5483f1, type: 2}
+  - {fileID: 11400000, guid: 473a05dfd25109c42b7848cdd340443f, type: 2}
+  - {fileID: 11400000, guid: 17a13104029c38e44b3ca1cf6624129b, type: 2}
+  - {fileID: 11400000, guid: d607e136384447f46a257693381c2c0c, type: 2}
+  - {fileID: 11400000, guid: be51f4b023ae90042bfb5e03402502a8, type: 2}

@@ -6,10 +6,15 @@ using UnityEngine.UI;
 using UnityEditor;
 
 using Cysharp.Threading.Tasks;
+#pragma warning disable CS4014 // disable warning
+#pragma warning disable CS1998 // disable warning
 
 using MessagePipe;
 using SkillStruct;
 using BattleSceneMessage;
+
+//using UnityEngine.Serialization;    //追加
+
 
 [CreateAssetMenu(menuName = "MessageableSO/Component/Commander/formation/chara")]
 public class MSO_FormationCommander : MessageableScriptableObject
@@ -17,11 +22,12 @@ public class MSO_FormationCommander : MessageableScriptableObject
 
     private sbyte count;
 
+    //[FormerlySerializedAs("formationCharaCatalog")]
     [SerializeField]
-    private List<MSO_FormationCharaSO> formationCharaCatalog = new List<MSO_FormationCharaSO>();
-    
+    private List<MSO_FormationCharaSO> formCharas = new List<MSO_FormationCharaSO>();
+
     [SerializeField]
-    private List<MSO_FormationEnemySO> formationEnemyCatalog = new List<MSO_FormationEnemySO>();
+    private List<MSO_FormationEnemySO> formEnemys = new List<MSO_FormationEnemySO>();
 
     /*
     private ISubscriber<NormalMoveToFront> moveToFrontSub;
@@ -30,6 +36,8 @@ public class MSO_FormationCommander : MessageableScriptableObject
     */
 
     private System.IDisposable disposable;
+
+    //private IPublisher<CallBattleMessage> callPub;
 
     private ISubscriber<BattleStartMessage> battleStartSub;
     private System.IDisposable disposableBattle;
@@ -40,15 +48,45 @@ public class MSO_FormationCommander : MessageableScriptableObject
     {
 
 #if UNITY_EDITOR
-        formationCharaCatalog.TrimExcess();
-        formationEnemyCatalog.TrimExcess();
+        formCharas.TrimExcess();
+        formEnemys.TrimExcess();
 #endif
+
+
+
+        var bagD = DisposableBag.CreateBuilder();
+        var encountSub = GlobalMessagePipe.GetAsyncSubscriber<EncountGroup>();
+
+
+
+        encountSub.Subscribe(async (info,ct) =>
+        {
+            for(int i = 0; i < 3; i++)
+            {
+               // Debug.Log("i" + i);
+                //Debug.Log(info.enemyGroup.Count);
+                if(i < info.enemyGroup.Count)
+                {
+                    //Debug.Log("ok");
+                    formEnemys[i].SetEnemy(info.enemyGroup[i]);
+                }
+                else
+                {
+                    formEnemys[i].NotSetEnemy();
+                }
+            }
+
+            //Debug.Log("pub");
+        }).AddTo(bagD);
+
 
         battleStartSub = GlobalMessagePipe.GetSubscriber<BattleStartMessage>();
 
         //バトル開始時にSub開始
-        disposable = battleStartSub.Subscribe(GetBattleImage =>
+         battleStartSub.Subscribe(GetBattleImage =>
         {
+            //disposableBattle?.Dispose();
+
             var bag = DisposableBag.CreateBuilder();
 
             //Enemyの全滅判定
@@ -57,13 +95,13 @@ public class MSO_FormationCommander : MessageableScriptableObject
 
             dropEmemySub.Subscribe(get =>
             {
-                count = FormationScope.NoneChara();
+                count = FormationScope.NoneEnemy();
                 var checkReturnSub = GlobalMessagePipe.GetSubscriber<KnockOutChecker>();
                 disposableCheckConti = checkReturnSub.Subscribe(get =>
                 {
                     
                     count = get.pos;
-                    Debug.Log("count: "+count);
+                    //Debug.Log("count: "+count);
                 });
                 var checkGetPub = GlobalMessagePipe.GetPublisher<KnockOutEnemy>();
                 checkGetPub.Publish(new KnockOutEnemy());
@@ -71,9 +109,9 @@ public class MSO_FormationCommander : MessageableScriptableObject
 
                 UniTask.NextFrame();
 
-                if (count == 0)
+                if (count == FormationScope.NoneEnemy())
                 {
-                    Debug.Log("count: " + count);
+                    //Debug.Log("count: " + count);
 
                     Debug.Log("all down");
                     var allDownPub = GlobalMessagePipe.GetPublisher<AllEnemyDownMessage>();
@@ -97,7 +135,7 @@ public class MSO_FormationCommander : MessageableScriptableObject
                 UniTask.NextFrame();
                 //Debug.Log("count: " + count);
 
-                if (count == 0)
+                if (count == FormationScope.NoneChara())
                 {
                     Debug.Log("all down");
                     var allDownPub = GlobalMessagePipe.GetPublisher<AllCharaDownMessage>();
@@ -113,56 +151,61 @@ public class MSO_FormationCommander : MessageableScriptableObject
 
             disposableBattle = bag.Build();
 
-        });
+        }).AddTo(bagD);
 
-
+        disposable = bagD.Build();
 
     }
 
     //Chara
+    public CharacterDataSO GetCharaData(int i)
+    {
+        return formCharas[i].setChara;
+    }
+
     public string GetCharaName(int i)
     {
-        return formationCharaCatalog[i].setChara.GetCharaName();
+        return formCharas[i].setChara.GetCharaName();
     }
     public bool GetParticipant(int i)
     {
-        return formationCharaCatalog[i].participant;
+        return formCharas[i].participant;
     }
 
     public Sprite GetBattleImage(int i)
     {
-        return formationCharaCatalog[i].setChara.charaImages.battleImage;
+        return formCharas[i].setChara.charaImages.battleImage;
     }
 
     public MovePosition GetMovePosition(int i)
     {
-        return formationCharaCatalog[i].currentPos;
+        return formCharas[i].currentPos;
     }
 
     public float GetCharaRatioOnHP(int i)
     {
-        //Debug.Log(formationCharaCatalog[i].GetRatioOnHP());
-        return formationCharaCatalog[i].GetRatioOnHP();
+        //Debug.Log(formCharas[i].GetRatioOnHP());
+        return formCharas[i].GetRatioOnHP();
     }
 
     //Enemy
     public string GetEnemyName(int i)
     {
-        return formationEnemyCatalog[i].enemy.GetEnemyName();
+        return formEnemys[i].enemy.GetEnemyName();
     }
 
     public string GetSettedSkillName(int i)
     {
-        return formationEnemyCatalog[i].GetSettedSkillName();
+        return formEnemys[i].GetSettedSkillName();
     }
 
     public bool GetEnemyParticipant(int i)
     {
-        return formationEnemyCatalog[i].participant;
+        return formEnemys[i].participant;
     }
 
     public float GetEnemyRatioOnHP(int i)
     {
-        return formationEnemyCatalog[i].GetRatioOnHP();
+        return formEnemys[i].GetRatioOnHP();
     }
 }

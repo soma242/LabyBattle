@@ -20,18 +20,16 @@ public class InputLayerController_BattleScene : MonoBehaviour
 
     private IPublisher<InputLayer> layerPub;
 
-    private IAsyncSubscriber<ActionSelectEndMessage> selectEndASub;
+    //private IAsyncSubscriber<ActionSelectEndMessage> selectEndASub;
 
-    private IAsyncSubscriber<TurnStartMessage> turnStartASub;
+    //private IAsyncSubscriber<TurnStartMessage> turnStartASub;
     //private IAsyncSubscriber<TurnEndMessage> turnEndASub;
 
     private System.IDisposable disposable;
     private System.IDisposable disposableLog;
 
-    [Inject]
-    private readonly ISubscriber<InputLayerSO, CancelInput> cancelSub;
-    [Inject]
-    private readonly ISubscriber<InputLayerSO, ScrollInput> scrollSub;
+    private ISubscriber<InputLayerSO, CancelInput> cancelSub;
+    private ISubscriber<InputLayerSO, ScrollInput> scrollSub;
 
 
     private IPublisher<ActionSelectCancelMessage> cancelSelectPub;
@@ -40,12 +38,15 @@ public class InputLayerController_BattleScene : MonoBehaviour
     void Awake()
     {
         layerPub = GlobalMessagePipe.GetPublisher<InputLayer>();
-        selectEndASub = GlobalMessagePipe.GetAsyncSubscriber<ActionSelectEndMessage>();
-        turnStartASub = GlobalMessagePipe.GetAsyncSubscriber<TurnStartMessage>();
+        var selectEndASub = GlobalMessagePipe.GetAsyncSubscriber<ActionSelectEndMessage>();
+        var turnStartASub = GlobalMessagePipe.GetAsyncSubscriber<TurnStartMessage>();
         //turnEndASub = GlobalMessagePipe.GetAsyncSubscriber<TurnEndMessage>();
 
         cancelSelectPub = GlobalMessagePipe.GetPublisher<ActionSelectCancelMessage>();
-        //scrollSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, ScrollInput>();
+        scrollSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, ScrollInput>();
+        cancelSub = GlobalMessagePipe.GetSubscriber<InputLayerSO, CancelInput>();
+
+        //layerPub.Publish(new InputLayer(battleOptionLayer));
 
         var bag = DisposableBag.CreateBuilder();
 
@@ -55,6 +56,7 @@ public class InputLayerController_BattleScene : MonoBehaviour
             layerPub.Publish(new InputLayer(battleLogLayer));
         }).AddTo(bag);
 
+        //Scene読み込み ≒ ターン開始時
         turnStartASub.Subscribe(async (get, ct) =>
         {
             layerPub.Publish(new InputLayer(battleOptionLayer));

@@ -51,9 +51,11 @@ public class MSO_DamageCalcSO : MessageableScriptableObject
         normalMagicSub.Subscribe(i =>
         {
             float damage = NormalMagicFormula(i.activePos.userSO, i.activeRatio);
-            //Debug.Log(name);
+            Debug.Log("damage: " +damage) ;
             normalMagicDamagePub.Publish(i.activePos.target, new NormalMagicDamageCalcMessage(damage, i.activePos));
         }).AddTo(bag);
+
+        disposable = bag.Build();
     }
 
 
@@ -84,7 +86,7 @@ public class MSO_DamageCalcSO : MessageableScriptableObject
 
         /*
 #if UNITY_EDITOR
-        Debug.Log("actualMagic: "+ info.GetActualMagic());
+        Debug.Log(info.GetTargetName()+"actualMagic: "+ info.GetActualMagic());
         Debug.Log("activeRatio: "+ activeRatio);
 #endif
         */

@@ -7,7 +7,6 @@ using SkillStruct;
 [CreateAssetMenu(menuName = "activeSkill/skillTarget/SingleChara")]
 public class MSO_SingleCharaTargetSO : MSO_ActiveSkillTargetSO
 {
-    private IPublisher<Active_SingleCharaTarget> targetPub;
 
 
 

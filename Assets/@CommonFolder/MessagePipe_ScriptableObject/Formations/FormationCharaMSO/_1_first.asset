@@ -13,5 +13,9 @@ MonoBehaviour:
   m_Name: _1_first
   m_EditorClassIdentifier: 
   formNumSO: {fileID: 11400000, guid: ee7d9840a6980624d994fc9cdab9800b, type: 2}
+  participant: 0
   setChara: {fileID: 11400000, guid: e1e325bcf4aa74640995c7437944732c, type: 2}
+  messages: {fileID: 11400000, guid: 08f90f48ad50e164ca56dcab1600b6e8, type: 2}
   skillListHolderSO: {fileID: 11400000, guid: 49f0effe788d77341a00c076c4e743cc, type: 2}
+  currentPos: 0
+  firstPos: 0

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17d012b029a87054bbd9c8cad9de49d6, type: 3}
+  m_Name: exampleEncount
+  m_EditorClassIdentifier: 
+  encountList:
+  - enemyGroup:
+    - {fileID: 11400000, guid: 576890df62419e6438f7775023a91d46, type: 2}
+    - {fileID: 11400000, guid: a409ef81ef002d24b8ee144eb09be84e, type: 2}
+    - {fileID: 11400000, guid: 0d5ea53f9dd329741b42d4de27d72bde, type: 2}
+    rate: 10
+  - enemyGroup:
+    - {fileID: 11400000, guid: 576890df62419e6438f7775023a91d46, type: 2}
+    - {fileID: 11400000, guid: 0d5ea53f9dd329741b42d4de27d72bde, type: 2}
+    rate: 20
+  encountRate: 10

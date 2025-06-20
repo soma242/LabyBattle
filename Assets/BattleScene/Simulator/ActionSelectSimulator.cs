@@ -15,6 +15,12 @@ public class ActionSimulateResultComp
     public TMP_Text skillText;
     public TMP_Text targetText;
     public Image hpCircle;
+
+    public void ResetSimulateText()
+    {
+        skillText.SetText(FormationScope.NoneTargetText());
+        targetText.SetText(FormationScope.NoneTargetText());
+    }
 }
 
 public class ActionSelectSimulator : MonoBehaviour
@@ -42,7 +48,6 @@ public class ActionSelectSimulator : MonoBehaviour
     private ISubscriber<ASkillSimulateMessage> skillNameSub;
     private ISubscriber<ReturnTargetName> returnTargetSub;
 
-    private System.IDisposable disposableCancellOnSecond;
 
     void Awake()
     {
@@ -100,8 +105,20 @@ public class ActionSelectSimulator : MonoBehaviour
 
         }).AddTo(bag);
 
+        var resetSub = GlobalMessagePipe.GetSubscriber<SimulateResetMessage>();
+        resetSub.Subscribe(get =>
+        {
+            simulateUI[FormationScope.FormToListChara(get.pos)].ResetSimulateText();
+        }).AddTo(bag);
 
-
+        var allResetSub = GlobalMessagePipe.GetSubscriber<AllSimulateRestMessage>();
+        allResetSub.Subscribe(returnTargetSub =>
+        {
+            foreach (var ui in simulateUI)
+            {
+                ui.ResetSimulateText();
+            }
+        }).AddTo(bag);
 
 
 

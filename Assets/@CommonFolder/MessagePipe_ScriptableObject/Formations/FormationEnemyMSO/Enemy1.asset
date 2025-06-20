@@ -13,4 +13,6 @@ MonoBehaviour:
   m_Name: Enemy1
   m_EditorClassIdentifier: 
   formNumSO: {fileID: 11400000, guid: c77a80ce95ba763439ed95f09bf7ea78, type: 2}
+  participant: 0
   enemy: {fileID: 11400000, guid: 576890df62419e6438f7775023a91d46, type: 2}
+  messages: {fileID: 11400000, guid: 08f90f48ad50e164ca56dcab1600b6e8, type: 2}
